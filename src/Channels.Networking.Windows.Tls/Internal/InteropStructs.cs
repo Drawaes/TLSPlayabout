@@ -19,7 +19,7 @@ namespace Channels.Networking.Windows.Tls.Internal
         public IntPtr Comment;
     }
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    internal struct SSPIHandle
+    public struct SSPIHandle
     {
         public IntPtr handleHi;
         public IntPtr handleLo;

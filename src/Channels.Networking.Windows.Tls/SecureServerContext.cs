@@ -12,31 +12,33 @@ using static Channels.Networking.Windows.Tls.Internal.InteropEnums;
 
 namespace Channels.Networking.Windows.Tls
 {
-    internal unsafe class SecureContext: IDisposable
+    public unsafe class SecureServerContext: IDisposable
     {
         EncryptionPolicy _encryptPolicy;
         string _hostName;
-        bool _serverMode;
-        X509CertificateCollection _clientCertificates;
         bool _remoteCertRequired = false;
         bool _checkCertName = false;
         bool _checkCertRevocationStatus = false;
         EncryptionPolicy _encryptionPolicy = EncryptionPolicy.RequireEncryption;
         SspiGlobal _securityContext;
         SSPIHandle _contextPointer;
+        private int _headerSize = 5; //5 is the minimum (1 for frame type, 2 for version, 2 for frame size)
+        private int _trailerSize = 16;
+        private int _maxDataSize = 16354;
+        private bool _readerToSend;
+        public bool ReaderToSend => _readerToSend;
 
-        public SecureContext(SspiGlobal securityContext, string hostName, bool serverMode, X509CertificateCollection clientCertificates)
+
+        public SecureServerContext(SspiGlobal securityContext, string hostName, X509CertificateCollection clientCertificates)
         {
             _securityContext = securityContext;
             _encryptPolicy = EncryptionPolicy.RequireEncryption;
-            _clientCertificates = clientCertificates;
-
+            
             if (hostName == null)
             {
                 throw new ArgumentNullException(nameof(hostName));
             }
             _hostName = hostName;
-            _serverMode = serverMode;
         }
 
         public void Dispose()
@@ -82,8 +84,6 @@ namespace Channels.Networking.Windows.Tls
 
         public byte[] ProcessContextMessage(ReadableBuffer messageBuffer)
         {
-            if (_serverMode)
-            {
                 SecurityBufferDescriptor input = new SecurityBufferDescriptor(2);
                 SecurityBuffer* inputBuff = stackalloc SecurityBuffer[2];
                 inputBuff[0].size = messageBuffer.Length;
@@ -136,20 +136,17 @@ namespace Channels.Networking.Windows.Tls
                         InteropSspi.QueryContextAttributesW(ref _contextPointer, ContextAttribute.StreamSizes, out ss);
                         _headerSize = ss.header;
                         _trailerSize = ss.trailer;
+                        _readerToSend = true;
                     }
 
                     return outArray;
                 }
-
-            }
             throw new NotImplementedException();
         }
 
-        private int _headerSize = 5; //ATTN must be set to at least 5 by default
-        private int _trailerSize = 16;
-        private int _maxDataSize = 16354;
 
-        internal async void Encrypt(WritableBuffer outBuffer, ReadableBuffer buffer)
+
+        public void Encrypt(WritableBuffer outBuffer, ReadableBuffer buffer)
         {
             outBuffer.Ensure(_trailerSize + _headerSize + buffer.Length); 
             void* outBufferPointer;
@@ -190,7 +187,7 @@ namespace Channels.Networking.Windows.Tls
         }
 
 
-        internal unsafe SecurityStatus Decrypt(ReadableBuffer buffer, out ReadableBuffer decryptedData)
+        public unsafe SecurityStatus Decrypt(ReadableBuffer buffer, out ReadableBuffer decryptedData)
         {
             void* pointer;
             if (buffer.IsSingleSpan)

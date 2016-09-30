@@ -23,7 +23,16 @@ namespace SSLServer
             serverCertificate = new X509Certificate("C:\\code\\CARoot.pfx", "Test123t");
 
             _global = new SspiGlobal(true, serverCertificate);
+
+
+
+
             
+            var clientContext = new SspiGlobal(false, null);
+
+            var cc = new SecureClientContext(clientContext,"localhost");
+            var tokenToSend = cc.ProcessContextMessage(default(ReadableBuffer));
+
             IPAddress address = IPAddress.Loopback;
             var endpoint = new IPEndPoint(address, 17777);
 
@@ -37,7 +46,7 @@ namespace SSLServer
 
         private static async void UserConnected(IChannel channel)
         {
-            SecureContext context = new SecureContext(_global,"test",true, null);
+            SecureServerContext context = new SecureServerContext(_global,"test", null);
             try
             {
                 while (true)

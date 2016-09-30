@@ -14,6 +14,12 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "SSLClient", "src\SSLClient\
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "SSLServer", "src\SSLServer\SSLServer.xproj", "{987265F9-13BD-4525-805E-9052FE9A2CE9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "testing", "testing", "{97D9CF6F-9ED7-48E0-8E1D-A976589D54AB}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "BenchMarks", "testing\BenchMarks\BenchMarks.xproj", "{88835B1E-D82B-4B5A-BA1E-E2573E3C6D75}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Channels.Networking.Windows.Tls", "src\Channels.Networking.Windows.Tls\Channels.Networking.Windows.Tls.xproj", "{E79C8494-C94F-4214-A51F-252C5C693C1A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +34,14 @@ Global
 		{987265F9-13BD-4525-805E-9052FE9A2CE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{987265F9-13BD-4525-805E-9052FE9A2CE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{987265F9-13BD-4525-805E-9052FE9A2CE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88835B1E-D82B-4B5A-BA1E-E2573E3C6D75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88835B1E-D82B-4B5A-BA1E-E2573E3C6D75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88835B1E-D82B-4B5A-BA1E-E2573E3C6D75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88835B1E-D82B-4B5A-BA1E-E2573E3C6D75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E79C8494-C94F-4214-A51F-252C5C693C1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E79C8494-C94F-4214-A51F-252C5C693C1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E79C8494-C94F-4214-A51F-252C5C693C1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E79C8494-C94F-4214-A51F-252C5C693C1A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -35,5 +49,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{7429547F-17DF-442F-86F4-6BFCDA49FCBB} = {7978F043-2AEE-48F7-B087-0D127C87EF09}
 		{987265F9-13BD-4525-805E-9052FE9A2CE9} = {7978F043-2AEE-48F7-B087-0D127C87EF09}
+		{88835B1E-D82B-4B5A-BA1E-E2573E3C6D75} = {97D9CF6F-9ED7-48E0-8E1D-A976589D54AB}
+		{E79C8494-C94F-4214-A51F-252C5C693C1A} = {7978F043-2AEE-48F7-B087-0D127C87EF09}
 	EndGlobalSection
 EndGlobal

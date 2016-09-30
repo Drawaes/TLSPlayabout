@@ -35,6 +35,9 @@ namespace Channels.Networking.Windows.Tls.Internal
         [DllImport(Dll, ExactSpelling = true, SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern int QueryContextAttributesW(ref SSPIHandle phContext, [In] InteropEnums.ContextAttribute contextFlag,  [Out] out StreamSizes sizes);
 
+        [DllImport(Dll, ExactSpelling = true, SetLastError = true)]
+        internal unsafe static extern int InitializeSecurityContextW(ref SSPIHandle credentialHandle, [In] void* inContextPtr, [In] string targetName, [In] ContextFlags inFlags, [In] int reservedI, [In] Endianness endianness, SecurityBufferDescriptor* inputBuffer, [In] int reservedII, [In,Out] void* newContextPtr, [In,Out] SecurityBufferDescriptor outputBuffer, [In, Out] ref ContextFlags attributes, out long timeStamp);
+
         public const int SP_PROT_SSL2_SERVER = 0x00000004;
         public const int SP_PROT_SSL2_CLIENT = 0x00000008;
         public const int SP_PROT_SSL2 = (SP_PROT_SSL2_SERVER | SP_PROT_SSL2_CLIENT);

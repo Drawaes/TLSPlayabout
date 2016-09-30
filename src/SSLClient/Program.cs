@@ -67,7 +67,7 @@ namespace SSLClient
             }
             // Encode a test message into a byte array.
             // Signal the end of the message using the "<EOF>".
-            byte[] messsage = Encoding.UTF8.GetBytes("Hello from the client.<EOF>");
+            byte[] messsage = Encoding.UTF8.GetBytes("there's a function for that");
             // Send hello message to the server. 
             sslStream.Write(messsage);
             sslStream.Flush();

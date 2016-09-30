@@ -11,9 +11,9 @@ using static Channels.Networking.Windows.Tls.Internal.InteropEnums;
 
 namespace Channels.Networking.Windows.Tls.Internal
 {
-    internal class SspiGlobal: IDisposable
+    public class SspiGlobal: IDisposable
     {
-        private const ContextFlags RequiredFlags = ContextFlags.ReplayDetect | ContextFlags.SequenceDetect | ContextFlags.Confidentiality | ContextFlags.AllocateMemory;
+        public const ContextFlags RequiredFlags = ContextFlags.ReplayDetect | ContextFlags.SequenceDetect | ContextFlags.Confidentiality | ContextFlags.AllocateMemory;
         public const ContextFlags ServerRequiredFlags = RequiredFlags | ContextFlags.AcceptStream;
         private const string SecurityPackage = "Microsoft Unified Security Protocol Provider";
         private bool _initOkay = false;
@@ -44,6 +44,7 @@ namespace Channels.Networking.Windows.Tls.Internal
                     if(name == SecurityPackage)
                     {
                         _maxTokenSize = package.cbMaxToken;
+                       
                         //The correct security package is available
                         _initOkay = true;
 
@@ -77,18 +78,9 @@ namespace Channels.Networking.Windows.Tls.Internal
             else
             {
                 direction = CredentialUse.Outbound;
-                throw new NotImplementedException();
+                flags = CredentialFlags.ValidateManual | CredentialFlags.NoDefaultCred | CredentialFlags.SendAuxRecord | CredentialFlags.UseStrongCrypto;
             }
-            X509Certificate2 cert;
-            if (_serverCertificate.GetType() == typeof(X509Certificate2))
-            {
-                cert = (X509Certificate2)_serverCertificate;
-            }
-            else
-            {
-                cert = new X509Certificate2(_serverCertificate.Handle);
-            }
-
+            
             var creds = new SecureCredential()
             {
                 rootStore = IntPtr.Zero,
@@ -102,17 +94,27 @@ namespace Channels.Networking.Windows.Tls.Internal
                 dwMaximumCipherStrength = 0,
                 version = SecureCredential.CurrentVersion,
                 dwFlags = flags,
-                grbitEnabledProtocols = InteropSspi.ServerProtocolMask,
-
+                certContextArray = IntPtr.Zero,
+                cCreds = 0
             };
-            IntPtr certPointer = cert.Handle;
-            //pointer to the pointer
-            IntPtr certPointerPointer = new IntPtr(&certPointer);
-            creds.certContextArray = certPointerPointer;
-            creds.cCreds = 1;
-            
+            IntPtr certPointer;
+
+            if (_isServer)
+            {
+                creds.grbitEnabledProtocols = InteropSspi.ServerProtocolMask;
+                certPointer = _serverCertificate.Handle;
+                //pointer to the pointer
+                IntPtr certPointerPointer = new IntPtr(&certPointer);
+                creds.certContextArray = certPointerPointer;
+                creds.cCreds = 1;
+            }
+            else
+            {
+                creds.grbitEnabledProtocols = InteropSspi.ClientProtocolMask;
+            }
+
             long timestamp = 0;
-            var code = InteropSspi.AcquireCredentialsHandleW(null, SecurityPackage, (int)direction, null, ref creds, null, null, ref _CredsHandle, out timestamp);
+            SecurityStatus code =(SecurityStatus) InteropSspi.AcquireCredentialsHandleW(null, SecurityPackage, (int)direction, null, ref creds, null, null, ref _CredsHandle, out timestamp);
             
             if(code != 0)
             {

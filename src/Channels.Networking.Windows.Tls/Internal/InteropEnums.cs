@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 
 namespace Channels.Networking.Windows.Tls.Internal
 {
-    internal static class InteropEnums
+    public static class InteropEnums
     {
         [Flags]
-        internal enum ContextFlags
+        public enum ContextFlags
         {
             Zero = 0,
             // The server in the transport application can
@@ -104,6 +104,7 @@ namespace Channels.Networking.Windows.Tls.Internal
             Padding = 0x09,    // non-data padding
             Stream = 0x0A,
             ChannelBindings = 0x0E,
+            Alert = 0x11,
             TargetHost = 0x10,
             ReadOnlyFlag = unchecked((int)0x80000000),
             ReadOnlyWithChecksum = 0x10000000

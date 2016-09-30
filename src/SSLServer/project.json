@@ -8,6 +8,7 @@
   "dependencies": {
     "Channels": "0.2.0-beta-15348",
     "Channels.Networking.Sockets": "0.2.0-beta-15348",
+    "Channels.Networking.Windows.Tls": "1.0.0-*",
     "Channels.Text.Primitives": "0.2.0-beta-15371",
     "Microsoft.NETCore.App": {
       "type": "platform",
