@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7978F043-2AEE-48F7-B087-0D127C87EF09}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{83703764-A46C-4D62-851F-F00F2BF36367}"
+	ProjectSection(SolutionItems) = preProject
+		global.json = global.json
+	EndProjectSection
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "SSLClient", "src\SSLClient\SSLClient.xproj", "{7429547F-17DF-442F-86F4-6BFCDA49FCBB}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "SSLServer", "src\SSLServer\SSLServer.xproj", "{987265F9-13BD-4525-805E-9052FE9A2CE9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7429547F-17DF-442F-86F4-6BFCDA49FCBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7429547F-17DF-442F-86F4-6BFCDA49FCBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7429547F-17DF-442F-86F4-6BFCDA49FCBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7429547F-17DF-442F-86F4-6BFCDA49FCBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{987265F9-13BD-4525-805E-9052FE9A2CE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{987265F9-13BD-4525-805E-9052FE9A2CE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{987265F9-13BD-4525-805E-9052FE9A2CE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{987265F9-13BD-4525-805E-9052FE9A2CE9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7429547F-17DF-442F-86F4-6BFCDA49FCBB} = {7978F043-2AEE-48F7-B087-0D127C87EF09}
+		{987265F9-13BD-4525-805E-9052FE9A2CE9} = {7978F043-2AEE-48F7-B087-0D127C87EF09}
+	EndGlobalSection
+EndGlobal
