@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Security;
 using System.Runtime.CompilerServices;
@@ -142,11 +143,13 @@ namespace Channels.Networking.Windows.Tls
 
             if (errorCode == SecurityStatus.ContinueNeeded || errorCode == SecurityStatus.OK)
             {
-                if (outputBuff[0].size == 0)
-                    return null;
-                byte[] outArray = new byte[outputBuff[0].size];
-                Marshal.Copy((IntPtr)outputBuff[0].tokenPointer, outArray, 0, outputBuff[0].size);
-
+                byte[] outArray = null;
+                if(outputBuff[0].size > 0)
+                {
+                    outArray = new byte[outputBuff[0].size];
+                    Marshal.Copy((IntPtr)outputBuff[0].tokenPointer, outArray, 0, outputBuff[0].size);
+                    result = InteropSspi.FreeContextBuffer((IntPtr)outputBuff[0].tokenPointer);
+                }
                 if (errorCode == SecurityStatus.OK)
                 {
                     StreamSizes ss;
@@ -157,8 +160,7 @@ namespace Channels.Networking.Windows.Tls
                     _readerToSend = true;
                 }
 
-                result = InteropSspi.FreeContextBuffer((IntPtr)outputBuff[0].tokenPointer);
-
+                
                 return outArray;
             }
             System.Diagnostics.Debug.Assert(false, "STOOOOP");

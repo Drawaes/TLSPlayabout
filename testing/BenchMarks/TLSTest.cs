@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using BenchmarkDotNet.Attributes;
 using Channels;
 using Channels.Networking.Windows.Tls;
 using Channels.Networking.Windows.Tls.Internal;
@@ -16,9 +17,12 @@ namespace BenchMarks
         Channel _serverChannel;
         SecureClientContext _clientContext;
         SecureServerContext _serverContext;
+        byte[] _MessageToPass;
 
+        [Setup]
         public void Setup()
         {
+            _MessageToPass = System.Text.Encoding.UTF8.GetBytes("The quick brown fox");
             ChannelFactory fact = new ChannelFactory();
             _clientChannel = fact.CreateChannel();
             _serverChannel = fact.CreateChannel();
@@ -28,8 +32,8 @@ namespace BenchMarks
 
             var clientGlobalContext = new SspiGlobal(false, null);
 
-            _clientContext = new SecureClientContext(clientGlobalContext, "localhost");
-            _serverContext = new SecureServerContext(serverGlobalContext, "localhost", null);
+            _clientContext = new SecureClientContext(clientGlobalContext, "timslaptop");
+            _serverContext = new SecureServerContext(serverGlobalContext, "timslaptop", null);
 
 
             Task[] tasks = new Task[2];
@@ -38,14 +42,7 @@ namespace BenchMarks
 
             tasks[0].Start();
             tasks[1].Start();
-
-
-            //SetupClient().Wait();
-
             Task.WaitAll(tasks);
-
-            Console.WriteLine($"result is {_clientContext.ReaderToSend} and {_serverContext.ReaderToSend}");
-            Console.ReadLine();
         }
 
         private async Task SetupServer()
@@ -119,6 +116,15 @@ namespace BenchMarks
                 }
                 _serverChannel.AdvanceReader(buffer.Start, buffer.End);
             }
+        }
+
+        public void RunTest()
+        {
+            var cBuffer = _clientChannel.Alloc(_MessageToPass.Length);
+            cBuffer.Write(_MessageToPass);
+            cBuffer.FlushAsync();
+
+
         }
     }
 }
