@@ -2,15 +2,43 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BenchmarkDotNet.Running;
 
 namespace BenchMarks
 {
     public class Program
     {
+        private static readonly Dictionary<string, Type> _benchmarks = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["TLS"] = typeof(TLSTest),
+        };
+
         public static void Main(string[] args)
         {
-            var t = new TLSTest();
-            t.Setup();
+            
+
+
+            if (args.Length > 0 && args[0].Equals("all", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("Running full benchmarks suite");
+                _benchmarks.Select(pair => pair.Value).ToList().ForEach(action => BenchmarkRunner.Run(action));
+                return;
+            }
+
+            if (args.Length == 0 || !_benchmarks.ContainsKey(args[0]))
+            {
+                Console.WriteLine("Please, select benchmark, list of available:");
+                _benchmarks
+                    .Select(pair => pair.Key)
+                    .ToList()
+                    .ForEach(Console.WriteLine);
+                Console.WriteLine("All");
+                return;
+            }
+
+            BenchmarkRunner.Run(_benchmarks[args[0]]);
+
+            Console.Read();
         }
     }
 }

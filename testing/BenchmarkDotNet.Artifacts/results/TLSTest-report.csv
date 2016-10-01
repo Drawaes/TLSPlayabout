@@ -1,0 +1,2 @@
+Type;Method;Mode;Platform;Jit;Toolchain;Runtime;GcMode;LaunchCount;WarmupCount;TargetCount;Affinity;Median;StdDev;Gen 0;Gen 1;Gen 2;Bytes Allocated/Op
+TLSTest;RunTest;Throughput;X64;RyuJit;Host;Host;Host;2;1;2;Auto;3.2998 us;0.0952 us;-;-;-;11.50

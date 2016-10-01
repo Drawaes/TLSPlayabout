@@ -168,9 +168,8 @@ namespace Channels.Networking.Windows.Tls
             throw new InvalidCredentialException();
         }
 
-
-
-        internal void Encrypt(WritableBuffer outBuffer, ReadableBuffer buffer)
+        
+        public void Encrypt(WritableBuffer outBuffer, ReadableBuffer buffer)
         {
             outBuffer.Ensure(_trailerSize + _headerSize + buffer.Length);
             void* outBufferPointer;
@@ -211,23 +210,27 @@ namespace Channels.Networking.Windows.Tls
         }
 
 
-        internal unsafe SecurityStatus Decrypt(ReadableBuffer buffer, out ReadableBuffer decryptedData)
+        public unsafe SecurityStatus Decrypt(ReadableBuffer buffer, out ReadableBuffer decryptedData)
         {
             void* pointer;
+            
             if (buffer.IsSingleSpan)
             {
                 buffer.First.TryGetPointer(out pointer);
             }
             else
             {
-                throw new NotImplementedException();
+                byte* tmpBuffer = stackalloc byte[buffer.Length];
+                Span<byte> span = new Span<byte>(tmpBuffer,buffer.Length);
+                buffer.CopyTo(span);
+                pointer = tmpBuffer;
             }
 
             decryptedData = buffer;
             int offset = 0;
             int count = buffer.Length;
 
-            SecurityStatus secStatus = (SecurityStatus)DecryptMessage(pointer, ref offset, ref count);
+            var secStatus = DecryptMessage(pointer, ref offset, ref count);
             decryptedData = buffer.Slice(offset, count);
             //if (needsToWriteBack)
             //{
