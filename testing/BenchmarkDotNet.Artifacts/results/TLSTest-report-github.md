@@ -11,9 +11,9 @@ JitModules=clrjit-v4.6.1586.0
 
 Type=TLSTest  Mode=Throughput  Platform=X64  
 Jit=RyuJit  LaunchCount=2  WarmupCount=1  
-TargetCount=2  
+TargetCount=3  
 
 ```
   Method |    Median |    StdDev | Gen 0 | Gen 1 | Gen 2 | Bytes Allocated/Op |
 -------- |---------- |---------- |------ |------ |------ |------------------- |
- RunTest | 3.2998 us | 0.0952 us |     - |     - |     - |              11.50 |
+ RunTest | 3.2073 us | 0.0117 us | 80.00 | 80.00 |  8.00 |              10.63 |

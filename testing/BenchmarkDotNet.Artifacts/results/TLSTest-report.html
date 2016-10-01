@@ -10,10 +10,10 @@ JitModules=clrjit-v4.6.1586.0
 </code></pre>
 <pre><code>Type=TLSTest  Mode=Throughput  Platform=X64  
 Jit=RyuJit  LaunchCount=2  WarmupCount=1  
-TargetCount=2  
+TargetCount=3  
 </code></pre>
 
 <table>
 <tr><th>Method</th><th>Median</th><th>StdDev</th><th>Gen 0</th><th>Gen 1</th><th>Gen 2</th><th>Bytes Allocated/Op</th>
-</tr><tr><td>RunTest</td><td>3.2998 us</td><td>0.0952 us</td><td>-</td><td>-</td><td>-</td><td>       11.50</td>
+</tr><tr><td>RunTest</td><td>3.2073 us</td><td>0.0117 us</td><td>80.00</td><td>80.00</td><td>8.00</td><td>       10.63</td>
 </tr></table>
