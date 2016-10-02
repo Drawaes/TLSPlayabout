@@ -24,17 +24,8 @@ namespace SSLServer
 
             _global = new SspiGlobal(true, serverCertificate);
 
-
-
-
             
-            var clientContext = new SspiGlobal(false, null);
-
-            var cc = new SecureClientContext(clientContext,"localhost");
-            var tokenToSend = cc.ProcessContextMessage(default(ReadableBuffer));
-
-            IPAddress address = IPAddress.Loopback;
-            var endpoint = new IPEndPoint(address, 17777);
+            var endpoint = new IPEndPoint(IPAddress.Any , 17777);
 
             server = new SocketListener();
             server.OnConnection(UserConnected);
@@ -46,12 +37,12 @@ namespace SSLServer
 
         private static async void UserConnected(IChannel channel)
         {
-            SecureServerContext context = new SecureServerContext(_global,"test", null);
+            SecureServerContext context = new SecureServerContext(_global,"test");
             try
             {
                 while (true)
                 {
-                    var buffer = await channel.Input.ReadAsync();
+                   var buffer = await channel.Input.ReadAsync();
 
 
                     ReadCursor pointToSliceMessage;
@@ -68,7 +59,6 @@ namespace SSLServer
                                 var output = channel.Output.Alloc(buff.Length);
                                 output.Write(buff);
                                 await output.FlushAsync();
-
                             }
                         }
                         else if (f == TlsFrameType.Invalid)

@@ -71,6 +71,21 @@ namespace Channels.Networking.Windows.Tls.Internal
             UnverifiedTargetName = 0x20000000,   // ISC_REQ_UNVERIFIED_TARGET_NAME
         }
 
+        public enum SEC_APPLICATION_PROTOCOL_NEGOTIATION_EXT
+        {
+            SecApplicationProtocolNegotiationExt_None = 0,
+            SecApplicationProtocolNegotiationExt_NPN,
+            SecApplicationProtocolNegotiationExt_ALPN,
+        }
+                
+        public enum SEC_APPLICATION_PROTOCOL_NEGOTIATION_STATUS: uint
+        {
+            SecApplicationProtocolNegotiationStatus_None = 0,
+            SecApplicationProtocolNegotiationStatus_Success,
+            SecApplicationProtocolNegotiationStatus_SelectedClientOnly
+        }
+
+
         internal enum CredentialUse
         {
             Inbound = 0x1,
@@ -106,6 +121,7 @@ namespace Channels.Networking.Windows.Tls.Internal
             ChannelBindings = 0x0E,
             Alert = 0x11,
             TargetHost = 0x10,
+            ApplicationProtocols = 18,
             ReadOnlyFlag = unchecked((int)0x80000000),
             ReadOnlyWithChecksum = 0x10000000
         }
@@ -147,6 +163,7 @@ namespace Channels.Networking.Windows.Tls.Internal
             RootStore = 0x55,
             IssuerListInfoEx = 0x59,
             ConnectionInfo = 0x5A,
+            ApplicationProtocol = 0x23,
             // SECPKG_ATTR_EAP_KEY_BLOCK        0x5b   // returns SecPkgContext_EapKeyBlock  
             // SECPKG_ATTR_MAPPED_CRED_ATTR     0x5c   // returns SecPkgContext_MappedCredAttr  
             // SECPKG_ATTR_SESSION_INFO         0x5d   // returns SecPkgContext_SessionInfo  

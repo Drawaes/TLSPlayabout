@@ -7,6 +7,7 @@ using BenchmarkDotNet.Attributes;
 using Channels;
 using Channels.Networking.Windows.Tls;
 using Channels.Networking.Windows.Tls.Internal;
+using static Channels.Networking.Windows.Tls.ApplicationProtocols;
 
 namespace BenchMarks
 {
@@ -29,12 +30,12 @@ namespace BenchMarks
             _serverChannel = fact.CreateChannel();
 
             _serverCertificate = new X509Certificate("C:\\code\\CARoot.pfx", "Test123t");
-            var serverGlobalContext = new SspiGlobal(true, _serverCertificate);
+            var serverGlobalContext = new SspiGlobal(true, _serverCertificate,ProtocolIds.Http11);
 
-            var clientGlobalContext = new SspiGlobal(false, null);
+            var clientGlobalContext = new SspiGlobal(false, null, ProtocolIds.Http11);
 
             _clientContext = new SecureClientContext(clientGlobalContext, "timslaptop");
-            _serverContext = new SecureServerContext(serverGlobalContext, "timslaptop", null);
+            _serverContext = new SecureServerContext(serverGlobalContext, "timslaptop");
 
 
             Task[] tasks = new Task[2];
@@ -44,6 +45,10 @@ namespace BenchMarks
             tasks[0].Start();
             tasks[1].Start();
             Task.WaitAll(tasks);
+
+            var cBuffer = _clientChannel.Alloc(_MessageToPass.Length);
+            cBuffer.Write(_MessageToPass);
+            cBuffer.FlushAsync().Wait();
         }
 
         private async Task SetupServer()
@@ -101,7 +106,7 @@ namespace BenchMarks
                 {
                     buffer = await _serverChannel.ReadAsync();
                     ReadCursor pointToSliceMessage;
-                    var f = _clientContext.CheckForFrameType(buffer, out pointToSliceMessage);
+                    var f = buffer.CheckForFrameType(out pointToSliceMessage);
                     while (f != TlsFrameType.Incomplete)
                     {
                         if (f == TlsFrameType.Handshake || f == TlsFrameType.ChangeCipherSpec)
@@ -123,7 +128,7 @@ namespace BenchMarks
                         {
                             throw new InvalidOperationException();
                         }
-                        f = _clientContext.CheckForFrameType(buffer, out pointToSliceMessage);
+                        f = buffer.CheckForFrameType(out pointToSliceMessage);
                     }
                     _serverChannel.AdvanceReader(buffer.Start, buffer.End);
                 }
@@ -137,9 +142,7 @@ namespace BenchMarks
         [Benchmark]
         public void RunTest()
         {
-            var cBuffer = _clientChannel.Alloc(_MessageToPass.Length);
-            cBuffer.Write(_MessageToPass);
-            cBuffer.FlushAsync().Wait();
+            
 
             var inputBuffer = _clientChannel.ReadAsync().GetResult();
             var serverWriter = _serverChannel.Alloc(10);
@@ -152,7 +155,10 @@ namespace BenchMarks
             _clientContext.Decrypt(fromServer,out decryptedData );
             _serverChannel.AdvanceReader(fromServer.End,fromServer.End);
 
-            
+            var cBuffer = _clientChannel.Alloc();
+            cBuffer.Append(ref decryptedData);
+            cBuffer.Commit();
+            cBuffer.FlushAsync().Wait();
 
         }
     }

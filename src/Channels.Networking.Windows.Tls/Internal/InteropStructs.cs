@@ -30,6 +30,12 @@ namespace Channels.Networking.Windows.Tls.Internal
         }
     }
 
+    
+
+    
+    
+
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct SecureCredential
     {
@@ -84,5 +90,14 @@ namespace Channels.Networking.Windows.Tls.Internal
         public int maximumMessage;
         public int buffersCount;
         public int blockSize;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct SecPkgContext_ApplicationProtocol
+    {
+        public SEC_APPLICATION_PROTOCOL_NEGOTIATION_STATUS ProtoNegoStatus; // Application  protocol negotiation status
+        public SEC_APPLICATION_PROTOCOL_NEGOTIATION_EXT ProtoNegoExt;       // Protocol negotiation extension type corresponding to this protocol ID
+        public byte ProtocolIdSize;                                // Size in bytes of the application protocol ID
+        public fixed byte ProtocolId[255];              // Byte string representing the negotiated application protocol ID
     }
 }

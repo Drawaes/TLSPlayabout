@@ -21,14 +21,31 @@ namespace Channels.Networking.Windows.Tls.Internal
         private bool _isServer;
         X509Certificate _serverCertificate;
         SslProtocols _supportedProtocols = SslProtocols.Tls;
-        SSPIHandle _CredsHandle;
+        SSPIHandle _credsHandle;
+        byte[] _alpnSupportedProtocols;
+        GCHandle _alpnHandle;
+        public SSPIHandle CredentialsHandle => _credsHandle;
+        public IntPtr AlpnSupportedProtocols => _alpnHandle.IsAllocated ? _alpnHandle.AddrOfPinnedObject() : IntPtr.Zero;
+        public int LengthOfSupportedProtocols => _alpnSupportedProtocols?.Length ?? 0;
 
-        public unsafe SspiGlobal(bool isServer,X509Certificate serverCert)
+
+
+        public unsafe SspiGlobal(bool isServer, X509Certificate serverCert)
+            :this(isServer, serverCert, 0)
+        {
+
+        }
+        public unsafe SspiGlobal(bool isServer, X509Certificate serverCert, ApplicationProtocols.ProtocolIds alpnSupportedProtocols)
         {
             _serverCertificate = serverCert;
             _isServer = isServer;
             int numberOfPackages;
             SecPkgInfo* secPointer = null;
+            if(alpnSupportedProtocols > 0)
+            {
+                _alpnSupportedProtocols = ApplicationProtocols.GetBufferForProtocolId(alpnSupportedProtocols);
+                _alpnHandle = GCHandle.Alloc(_alpnSupportedProtocols,GCHandleType.Pinned);
+            }
             try
             {
                 if(InteropSspi.EnumerateSecurityPackagesW(out numberOfPackages, out secPointer) != 0)
@@ -114,7 +131,7 @@ namespace Channels.Networking.Windows.Tls.Internal
             }
 
             long timestamp = 0;
-            SecurityStatus code =(SecurityStatus) InteropSspi.AcquireCredentialsHandleW(null, SecurityPackage, (int)direction, null, ref creds, null, null, ref _CredsHandle, out timestamp);
+            SecurityStatus code =(SecurityStatus) InteropSspi.AcquireCredentialsHandleW(null, SecurityPackage, (int)direction, null, ref creds, null, null, ref _credsHandle, out timestamp);
             
             if(code != 0)
             {
@@ -124,9 +141,10 @@ namespace Channels.Networking.Windows.Tls.Internal
 
         public void Dispose()
         {
-            InteropSspi.FreeCredentialsHandle(ref _CredsHandle);
+            InteropSspi.FreeCredentialsHandle(ref _credsHandle);
+            if(_alpnHandle.IsAllocated) { _alpnHandle.Free();} 
         }
 
-        public SSPIHandle CredsHandle => _CredsHandle;
+        
     }
 }

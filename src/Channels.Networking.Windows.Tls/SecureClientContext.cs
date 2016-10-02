@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -27,7 +28,9 @@ namespace Channels.Networking.Windows.Tls
         private int _trailerSize = 16;
         private int _maxDataSize = 16354;
         private bool _readerToSend;
+        private ApplicationProtocols.ProtocolIds _negotiatedProtocol;
         public bool ReaderToSend => _readerToSend;
+        public ApplicationProtocols.ProtocolIds NegotiatedProtocol => _negotiatedProtocol;
 
         public SecureClientContext(SspiGlobal securityContext, string hostName)
         {
@@ -46,41 +49,7 @@ namespace Channels.Networking.Windows.Tls
             throw new NotImplementedException();
         }
 
-        public TlsFrameType CheckForFrameType(ReadableBuffer buffer, out ReadCursor endOfMessage)
-        {
-            endOfMessage = buffer.Start;
-            //Need at least 5 bytes to be useful
-            if (buffer.Length < 5)
-                return TlsFrameType.Incomplete;
-
-            var messageType = (TlsFrameType)buffer.ReadBigEndian<byte>();
-            buffer = buffer.Slice(1);
-
-            //Check it's a valid frametype for what we are expecting
-            if (messageType != TlsFrameType.AppData && messageType != TlsFrameType.Alert && messageType != TlsFrameType.ChangeCipherSpec && messageType != TlsFrameType.Handshake)
-                return TlsFrameType.Invalid;
-
-            //now we get the version
-
-            var version = buffer.ReadBigEndian<ushort>();
-            buffer = buffer.Slice(2);
-
-            if (version < 0x300 || version >= 0x500)
-            {
-                return TlsFrameType.Invalid;
-            }
-
-            var length = buffer.ReadBigEndian<ushort>();
-            buffer = buffer.Slice(2);
-
-            if (buffer.Length >= length)
-            {
-                endOfMessage = buffer.Slice(0, length).End;
-                return messageType;
-            }
-
-            return TlsFrameType.Incomplete;
-        }
+        
 
         public byte[] ProcessContextMessage(ReadableBuffer messageBuffer)
         {
@@ -99,7 +68,7 @@ namespace Channels.Networking.Windows.Tls
 
             output.UnmanagedPointer = outputBuff;
 
-            var handle = _securityContext.CredsHandle;
+            var handle = _securityContext.CredentialsHandle;
             SSPIHandle localhandle = _contextPointer;
             void* contextptr;
             void* newContextptr;
@@ -114,7 +83,6 @@ namespace Channels.Networking.Windows.Tls
                 newContextptr = null;
             }
 
-            int result;
             ContextFlags unusedAttributes = default(ContextFlags);
             SecurityBufferDescriptor* pointerToDescriptor = null;
             if (messageBuffer.Length > 0)
@@ -123,24 +91,54 @@ namespace Channels.Networking.Windows.Tls
                 SecurityBuffer* inputBuff = stackalloc SecurityBuffer[2];
                 inputBuff[0].size = messageBuffer.Length;
 
-                void* arrayPointer;
-                messageBuffer.First.TryGetPointer(out arrayPointer);
-                inputBuff[0].tokenPointer = arrayPointer;
+                
+                if (messageBuffer.IsSingleSpan)
+                {
+                    void* arrayPointer;
+                    messageBuffer.First.TryGetPointer(out arrayPointer);
+                    inputBuff[0].tokenPointer = arrayPointer;
+                }
+                else
+                {
+                    byte* tempBuffer = stackalloc byte[messageBuffer.Length];
+                    Span<byte> tmpSpan = new Span<byte>(tempBuffer,messageBuffer.Length);
+                    messageBuffer.CopyTo(tmpSpan);
+                    inputBuff[0].tokenPointer = tempBuffer;
+                }
+                                
 
                 inputBuff[0].type = SecurityBufferType.Token;
-                inputBuff[1].size = 0;
-                inputBuff[1].tokenPointer = null;
-                inputBuff[1].type = SecurityBufferType.Empty;
+
+                outputBuff[1].type = SecurityBufferType.Empty;
+                outputBuff[1].size = 0;
+                outputBuff[1].tokenPointer = null;
+
                 input.UnmanagedPointer = inputBuff;
                 pointerToDescriptor = &input;
                 
             }
+            else
+            {
+                if (_securityContext.LengthOfSupportedProtocols > 0)
+                {
+                    SecurityBufferDescriptor input = new SecurityBufferDescriptor(1);
+                    SecurityBuffer* inputBuff = stackalloc SecurityBuffer[1];
+                    inputBuff[0].size = _securityContext.LengthOfSupportedProtocols;
+
+                    inputBuff[0].tokenPointer =(void*) _securityContext.AlpnSupportedProtocols;
+
+                    inputBuff[0].type = SecurityBufferType.ApplicationProtocols;
+
+                    input.UnmanagedPointer = inputBuff;
+                    pointerToDescriptor = &input;
+                }
+            }
+            
             long timestamp = 0;
-            result = InteropSspi.InitializeSecurityContextW(ref handle, contextptr, _hostName, SspiGlobal.RequiredFlags | ContextFlags.InitManualCredValidation,0, Endianness.Native, pointerToDescriptor,0,  newContextptr, output, ref unusedAttributes, out timestamp);
+            SecurityStatus errorCode = (SecurityStatus) InteropSspi.InitializeSecurityContextW(ref handle, contextptr, _hostName, SspiGlobal.RequiredFlags | ContextFlags.InitManualCredValidation,0, Endianness.Native, pointerToDescriptor,0,  newContextptr, output, ref unusedAttributes, out timestamp);
 
             _contextPointer = localhandle;
-            var errorCode = (SecurityStatus)result;
-
+           
             if (errorCode == SecurityStatus.ContinueNeeded || errorCode == SecurityStatus.OK)
             {
                 byte[] outArray = null;
@@ -148,7 +146,7 @@ namespace Channels.Networking.Windows.Tls
                 {
                     outArray = new byte[outputBuff[0].size];
                     Marshal.Copy((IntPtr)outputBuff[0].tokenPointer, outArray, 0, outputBuff[0].size);
-                    result = InteropSspi.FreeContextBuffer((IntPtr)outputBuff[0].tokenPointer);
+                    InteropSspi.FreeContextBuffer((IntPtr)outputBuff[0].tokenPointer);
                 }
                 if (errorCode == SecurityStatus.OK)
                 {
@@ -157,15 +155,25 @@ namespace Channels.Networking.Windows.Tls
                     InteropSspi.QueryContextAttributesW(ref _contextPointer, ContextAttribute.StreamSizes, out ss);
                     _headerSize = ss.header;
                     _trailerSize = ss.trailer;
+                    
+                    if (_securityContext.LengthOfSupportedProtocols > 0)
+                    {
+                        SecPkgContext_ApplicationProtocol protoInfo;
+
+                        InteropSspi.QueryContextAttributesW(ref _contextPointer, ContextAttribute.ApplicationProtocol, out protoInfo);
+
+                        if(protoInfo.ProtoNegoStatus != SEC_APPLICATION_PROTOCOL_NEGOTIATION_STATUS.SecApplicationProtocolNegotiationStatus_Success)
+                        {
+                            throw new InvalidOperationException("Could not negotiate a mutal application protocol");
+                        }
+                        _negotiatedProtocol = ApplicationProtocols.GetNegotiatedProtocol(protoInfo.ProtocolId, protoInfo.ProtocolIdSize);
+                    }
                     _readerToSend = true;
                 }
-
-                
                 return outArray;
             }
-            System.Diagnostics.Debug.Assert(false, "STOOOOP");
-
-            throw new InvalidCredentialException();
+            
+            throw new InvalidOperationException($"An error occured trying to negoiate a session {errorCode}");
         }
 
         
