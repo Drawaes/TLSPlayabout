@@ -31,27 +31,32 @@ namespace Channels.Networking.Windows.Tls
         private ChannelFactory _channelFactory;
         internal string HostName => _hostName;
 
-        public unsafe SecurityContext(ChannelFactory factory,string hostName, bool isServer, X509Certificate serverCert)
+        public SecurityContext(ChannelFactory factory,string hostName, bool isServer, X509Certificate serverCert)
             :this(factory, hostName, isServer, serverCert, 0)
         {
         }
 
-        public unsafe SecurityContext(ChannelFactory factory,string hostName, bool isServer, X509Certificate serverCert, ApplicationProtocols.ProtocolIds alpnSupportedProtocols)
+        public SecurityContext(ChannelFactory factory,string hostName, bool isServer, X509Certificate serverCert, ApplicationProtocols.ProtocolIds alpnSupportedProtocols)
         {
             _hostName = hostName;
             _channelFactory = factory;
             _serverCertificate = serverCert;
             _isServer = isServer;
+            CreateAuthentication(alpnSupportedProtocols);
+        }
+
+        private unsafe void CreateAuthentication(ApplicationProtocols.ProtocolIds alpnSupportedProtocols)
+        {
             int numberOfPackages;
             SecPkgInfo* secPointer = null;
-            if(alpnSupportedProtocols > 0)
+            if (alpnSupportedProtocols > 0)
             {
                 _alpnSupportedProtocols = ApplicationProtocols.GetBufferForProtocolId(alpnSupportedProtocols);
-                _alpnHandle = GCHandle.Alloc(_alpnSupportedProtocols,GCHandleType.Pinned);
+                _alpnHandle = GCHandle.Alloc(_alpnSupportedProtocols, GCHandleType.Pinned);
             }
             try
             {
-                if(InteropSspi.EnumerateSecurityPackagesW(out numberOfPackages, out secPointer) != 0)
+                if (InteropSspi.EnumerateSecurityPackagesW(out numberOfPackages, out secPointer) != 0)
                 {
                     throw new InvalidOperationException("Unable to enumerate security packages");
                 }
@@ -61,17 +66,13 @@ namespace Channels.Networking.Windows.Tls
                 {
                     var package = secPointer[i];
                     var name = Marshal.PtrToStringUni(package.Name);
-                    if(name == SecurityPackage)
+                    if (name == SecurityPackage)
                     {
                         _maxTokenSize = package.cbMaxToken;
-                       
+
                         //The correct security package is available
                         _initOkay = true;
-
                         GetCredentials();
-
-                        
-
                         return;
                     }
                 }
@@ -161,7 +162,5 @@ namespace Channels.Networking.Windows.Tls
             InteropSspi.FreeCredentialsHandle(ref _credsHandle);
             if(_alpnHandle.IsAllocated) { _alpnHandle.Free();} 
         }
-
-        
     }
 }

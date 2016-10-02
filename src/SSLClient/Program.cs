@@ -17,9 +17,7 @@ namespace SSLClient
             RunClient("timslaptop", "timslaptop");
             Console.ReadLine();
         }
-
-        private static Hashtable certificateErrors = new Hashtable();
-
+                
         // The following method is invoked by the RemoteCertificateValidationDelegate.
         public static bool ValidateServerCertificate(
               object sender,

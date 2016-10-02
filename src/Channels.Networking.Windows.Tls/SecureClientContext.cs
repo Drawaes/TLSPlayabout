@@ -85,8 +85,8 @@ namespace Channels.Networking.Windows.Tls
                 SecurityBufferDescriptor input = new SecurityBufferDescriptor(2);
                 SecurityBuffer* inputBuff = stackalloc SecurityBuffer[2];
                 inputBuff[0].size = messageBuffer.Length;
+                inputBuff[0].type = SecurityBufferType.Token;
 
-                
                 if (messageBuffer.IsSingleSpan)
                 {
                     void* arrayPointer;
@@ -99,10 +99,7 @@ namespace Channels.Networking.Windows.Tls
                     Span<byte> tmpSpan = new Span<byte>(tempBuffer,messageBuffer.Length);
                     messageBuffer.CopyTo(tmpSpan);
                     inputBuff[0].tokenPointer = tempBuffer;
-                }
-                                
-
-                inputBuff[0].type = SecurityBufferType.Token;
+                }            
 
                 outputBuff[1].type = SecurityBufferType.Empty;
                 outputBuff[1].size = 0;

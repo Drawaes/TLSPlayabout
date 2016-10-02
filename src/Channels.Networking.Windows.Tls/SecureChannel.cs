@@ -6,27 +6,14 @@ using Channels.Networking.Windows.Tls.Internal;
 
 namespace Channels.Networking.Windows.Tls
 {
-    public class SecureChannel:IChannel
+    public class SecureChannel: IChannel
     {
         IChannel _lowerChannel;
         Channel _outputChannel;
         Channel _inputChannel;
-        
-        public IReadableChannel Input
-        {
-            get
-            {
-                return _outputChannel;
-            }
-        }
 
-        public IWritableChannel Output
-        {
-            get
-            {
-                return _inputChannel;
-            }
-        }
+        public IReadableChannel Input => _outputChannel;
+        public IWritableChannel Output => _inputChannel;
 
         public SecureChannel(IChannel inChannel, ChannelFactory channelFactory)
         {
@@ -35,12 +22,11 @@ namespace Channels.Networking.Windows.Tls
             _outputChannel = channelFactory.CreateChannel();
         }
 
-        internal async void StartReading<T>(T securityContext) where T :ISecureContext
+        internal async void StartReading<T>(T securityContext) where T : ISecureContext
         {
             while (true)
             {
                 var buffer = await _lowerChannel.Input.ReadAsync();
-
 
                 ReadCursor pointToSliceMessage;
                 var f = buffer.CheckForFrameType(out pointToSliceMessage);
@@ -64,7 +50,7 @@ namespace Channels.Networking.Windows.Tls
                     }
                     else if (f == TlsFrameType.Invalid)
                     {
-                        throw new InvalidOperationException();
+                        throw new InvalidOperationException("We have recieved an invalid tls frame");
                     }
                     else if (f == TlsFrameType.AppData)
                     {
@@ -75,16 +61,14 @@ namespace Channels.Networking.Windows.Tls
                         securityContext.Decrypt(messageBuffer, decryptedData);
 
                         await decryptedData.FlushAsync();
-
-
                     }
                     f = buffer.CheckForFrameType(out pointToSliceMessage);
                 }
-                _lowerChannel.Input.Advance(buffer.Start,buffer.End);
+                _lowerChannel.Input.Advance(buffer.Start, buffer.End);
             }
         }
 
-        private async void StartWriting<T>(T securityContext) where T :ISecureContext
+        private async void StartWriting<T>(T securityContext) where T : ISecureContext
         {
             while (true)
             {
