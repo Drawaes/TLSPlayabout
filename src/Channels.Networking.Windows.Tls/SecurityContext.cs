@@ -38,6 +38,10 @@ namespace Channels.Networking.Windows.Tls
 
         public SecurityContext(ChannelFactory factory,string hostName, bool isServer, X509Certificate serverCert, ApplicationProtocols.ProtocolIds alpnSupportedProtocols)
         {
+            if (hostName == null)
+            {
+                throw new ArgumentNullException(nameof(hostName));
+            }
             _hostName = hostName;
             _channelFactory = factory;
             _serverCertificate = serverCert;
@@ -148,11 +152,11 @@ namespace Channels.Networking.Windows.Tls
             var chan = new SecureChannel(channel, _channelFactory);
             if(_isServer)
             {
-                chan.StartReading(new SecureServerContext(this, _hostName));
+                chan.StartReading(new SecureServerContext(this));
             }
             else
             {
-                chan.StartReading(new SecureClientContext(this, _hostName));
+                chan.StartReading(new SecureClientContext(this));
             }
             return chan;
         }

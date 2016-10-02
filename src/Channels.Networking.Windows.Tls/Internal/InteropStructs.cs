@@ -34,20 +34,18 @@ namespace Channels.Networking.Windows.Tls.Internal
         public int version;
         public int cCreds;
         public IntPtr certContextArray;
-        public IntPtr rootStore;               // == always null, OTHERWISE NOT RELIABLE
+        public IntPtr rootStore;              
         public int cMappers;
-        public IntPtr phMappers;               // == always null, OTHERWISE NOT RELIABLE
+        public IntPtr phMappers;               
         public int cSupportedAlgs;
-        public IntPtr palgSupportedAlgs;       // == always null, OTHERWISE NOT RELIABLE
+        public IntPtr palgSupportedAlgs;       
         public int grbitEnabledProtocols;
         public int dwMinimumCipherStrength;
         public int dwMaximumCipherStrength;
         public int dwSessionLifespan;
         public CredentialFlags dwFlags;
         public int reserved;
-
-
-    } // SecureCredential
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     internal unsafe struct SecurityBuffer
@@ -60,8 +58,8 @@ namespace Channels.Networking.Windows.Tls.Internal
     [StructLayout(LayoutKind.Sequential)]
     internal unsafe struct SecurityBufferDescriptor
     {
-        public readonly int Version;
-        public readonly int Count;
+        public int Version;
+        public int Count;
         public void* UnmanagedPointer;
 
         public SecurityBufferDescriptor(int count)
@@ -70,10 +68,10 @@ namespace Channels.Networking.Windows.Tls.Internal
             Count = count;
             UnmanagedPointer = null;
         }
-    } // SecurityBufferDescriptor
+    }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct StreamSizes
+    internal struct ContextStreamSizes
     {
         public int header;
         public int trailer;
@@ -83,7 +81,7 @@ namespace Channels.Networking.Windows.Tls.Internal
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal unsafe struct SecPkgContext_ApplicationProtocol
+    internal unsafe struct ContextApplicationProtocol
     {
         public SEC_APPLICATION_PROTOCOL_NEGOTIATION_STATUS ProtoNegoStatus; // Application  protocol negotiation status
         public SEC_APPLICATION_PROTOCOL_NEGOTIATION_EXT ProtoNegoExt;       // Protocol negotiation extension type corresponding to this protocol ID

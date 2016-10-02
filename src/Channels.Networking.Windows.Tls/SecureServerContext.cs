@@ -13,30 +13,23 @@ namespace Channels.Networking.Windows.Tls
 {
     internal unsafe class SecureServerContext: ISecureContext
     {
-        string _hostName;
-        EncryptionPolicy _encryptionPolicy = EncryptionPolicy.RequireEncryption;
-        SecurityContext _securityContext;
-        SSPIHandle _contextPointer;
+        private SecurityContext _securityContext;
+        private SSPIHandle _contextPointer;
         private int _headerSize = 5; //5 is the minimum (1 for frame type, 2 for version, 2 for frame size)
         private int _trailerSize = 16;
         private int _maxDataSize = 16354;
         private bool _readyToSend;
-        public bool ReadyToSend => _readyToSend;
         private ApplicationProtocols.ProtocolIds _negotiatedProtocol;
+
+        public bool ReadyToSend => _readyToSend;
         public ApplicationProtocols.ProtocolIds NegotiatedProtocol => _negotiatedProtocol;
         public int HeaderSize => _headerSize;
         public int TrailerSize => _trailerSize;
         public SSPIHandle ContextHandle => _contextPointer;
 
-        public SecureServerContext(SecurityContext securityContext, string hostName)
+        public SecureServerContext(SecurityContext securityContext)
         {
             _securityContext = securityContext;
-            
-            if (hostName == null)
-            {
-                throw new ArgumentNullException(nameof(hostName));
-            }
-            _hostName = hostName;
         }
 
         public void Dispose()
@@ -103,19 +96,19 @@ namespace Channels.Networking.Windows.Tls
             long timestamp;
             var handle = _securityContext.CredentialsHandle;
             void* contextptr;
+            var localPointer = _contextPointer;
             if (_contextPointer.handleHi == IntPtr.Zero && _contextPointer.handleLo == IntPtr.Zero)
             {
                 contextptr = null;
             }
             else
             {
-                contextptr = Unsafe.AsPointer(ref _contextPointer);
+                contextptr = &localPointer;
             }
-            var result = InteropSspi.AcceptSecurityContext(ref handle, contextptr, input, SecurityContext.ServerRequiredFlags, Endianness.Native, ref _contextPointer, output, ref flags, out timestamp);
+            var errorCode =(SecurityStatus) InteropSspi.AcceptSecurityContext(ref handle, contextptr, input, SecurityContext.ServerRequiredFlags, Endianness.Native, ref _contextPointer, output, ref flags, out timestamp);
 
-
-            var errorCode = (SecurityStatus)result;
-
+            _contextPointer = localPointer;
+                        
             if (errorCode == SecurityStatus.ContinueNeeded || errorCode == SecurityStatus.OK)
             {
                 byte[] outArray = null;
@@ -127,7 +120,7 @@ namespace Channels.Networking.Windows.Tls
                 }
                 if (errorCode == SecurityStatus.OK)
                 {
-                    StreamSizes ss;
+                    ContextStreamSizes ss;
                     //We have a valid context so lets query it for info
                     InteropSspi.QueryContextAttributesW(ref _contextPointer, ContextAttribute.StreamSizes, out ss);
                     _headerSize = ss.header;
@@ -135,7 +128,7 @@ namespace Channels.Networking.Windows.Tls
 
                     if (_securityContext.LengthOfSupportedProtocols > 0)
                     {
-                        SecPkgContext_ApplicationProtocol protoInfo;
+                        ContextApplicationProtocol protoInfo;
 
                         InteropSspi.QueryContextAttributesW(ref _contextPointer, ContextAttribute.ApplicationProtocol, out protoInfo);
 
@@ -149,7 +142,7 @@ namespace Channels.Networking.Windows.Tls
                 }
                 return outArray;
             }
-            throw new NotImplementedException();
+            throw new InvalidOperationException($"We failed to build a server context {errorCode}");
         }
     }
 }

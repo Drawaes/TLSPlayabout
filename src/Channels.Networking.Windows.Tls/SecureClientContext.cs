@@ -15,10 +15,8 @@ namespace Channels.Networking.Windows.Tls
 {
     internal unsafe class SecureClientContext:ISecureContext
     {
-        string _hostName;
-        EncryptionPolicy _encryptionPolicy = EncryptionPolicy.RequireEncryption;
-        SecurityContext _securityContext;
-        SSPIHandle _contextPointer;
+        private SecurityContext _securityContext;
+        private SSPIHandle _contextPointer;
         private int _headerSize = 5; //5 is the minimum (1 for frame type, 2 for version, 2 for frame size)
         private int _trailerSize = 16;
         private int _maxDataSize = 16354;
@@ -30,15 +28,9 @@ namespace Channels.Networking.Windows.Tls
         public int HeaderSize => _headerSize;
         public SSPIHandle ContextHandle => _contextPointer;
 
-        public SecureClientContext(SecurityContext securityContext, string hostName)
+        public SecureClientContext(SecurityContext securityContext)
         {
             _securityContext = securityContext;
-            
-            if (hostName == null)
-            {
-                throw new ArgumentNullException(nameof(hostName));
-            }
-            _hostName = hostName;
         }
 
         public void Dispose()
@@ -127,7 +119,7 @@ namespace Channels.Networking.Windows.Tls
             }
             
             long timestamp = 0;
-            SecurityStatus errorCode = (SecurityStatus) InteropSspi.InitializeSecurityContextW(ref handle, contextptr, _hostName, SecurityContext.RequiredFlags | ContextFlags.InitManualCredValidation,0, Endianness.Native, pointerToDescriptor,0,  newContextptr, output, ref unusedAttributes, out timestamp);
+            SecurityStatus errorCode = (SecurityStatus) InteropSspi.InitializeSecurityContextW(ref handle, contextptr, _securityContext.HostName, SecurityContext.RequiredFlags | ContextFlags.InitManualCredValidation,0, Endianness.Native, pointerToDescriptor,0,  newContextptr, output, ref unusedAttributes, out timestamp);
 
             _contextPointer = localhandle;
            
@@ -142,7 +134,7 @@ namespace Channels.Networking.Windows.Tls
                 }
                 if (errorCode == SecurityStatus.OK)
                 {
-                    StreamSizes ss;
+                    ContextStreamSizes ss;
                     //We have a valid context so lets query it for info
                     InteropSspi.QueryContextAttributesW(ref _contextPointer, ContextAttribute.StreamSizes, out ss);
                     _headerSize = ss.header;
@@ -150,7 +142,7 @@ namespace Channels.Networking.Windows.Tls
                     
                     if (_securityContext.LengthOfSupportedProtocols > 0)
                     {
-                        SecPkgContext_ApplicationProtocol protoInfo;
+                        ContextApplicationProtocol protoInfo;
 
                         InteropSspi.QueryContextAttributesW(ref _contextPointer, ContextAttribute.ApplicationProtocol, out protoInfo);
 
