@@ -6,13 +6,12 @@ using Channels.Networking.Windows.Tls.Internal;
 
 namespace Channels.Networking.Windows.Tls
 {
-    public class SecureChannel<T> :IChannel where T : ISecureContext
+    public class SecureChannel:IChannel
     {
         IChannel _lowerChannel;
         Channel _outputChannel;
         Channel _inputChannel;
-        T _securityContext;
-
+        
         public IReadableChannel Input
         {
             get
@@ -29,16 +28,14 @@ namespace Channels.Networking.Windows.Tls
             }
         }
 
-        public SecureChannel(IChannel inChannel, ChannelFactory channelFactory, T securityContext)
+        public SecureChannel(IChannel inChannel, ChannelFactory channelFactory)
         {
             _lowerChannel = inChannel;
             _inputChannel = channelFactory.CreateChannel();
             _outputChannel = channelFactory.CreateChannel();
-            _securityContext = securityContext;
-            StartReading();
         }
 
-        private async void StartReading()
+        internal async void StartReading<T>(T securityContext) where T :ISecureContext
         {
             while (true)
             {
@@ -53,16 +50,16 @@ namespace Channels.Networking.Windows.Tls
                     {
                         var messageBuffer = buffer.Slice(0, pointToSliceMessage);
                         buffer = buffer.Slice(pointToSliceMessage);
-                        var buff = _securityContext.ProcessContextMessage(messageBuffer);
+                        var buff = securityContext.ProcessContextMessage(messageBuffer);
                         if (buff != null && buff.Length > 0)
                         {
                             var output = _lowerChannel.Output.Alloc(buff.Length);
                             output.Write(buff);
                             await output.FlushAsync();
                         }
-                        if (_securityContext.ReadyToSend)
+                        if (securityContext.ReadyToSend)
                         {
-                            StartWriting();
+                            StartWriting(securityContext);
                         }
                     }
                     else if (f == TlsFrameType.Invalid)
@@ -75,7 +72,7 @@ namespace Channels.Networking.Windows.Tls
                         buffer = buffer.Slice(pointToSliceMessage);
                         var decryptedData = _outputChannel.Alloc();
 
-                        _securityContext.Decrypt(messageBuffer, decryptedData);
+                        securityContext.Decrypt(messageBuffer, decryptedData);
 
                         await decryptedData.FlushAsync();
 
@@ -87,13 +84,13 @@ namespace Channels.Networking.Windows.Tls
             }
         }
 
-        private async void StartWriting()
+        private async void StartWriting<T>(T securityContext) where T :ISecureContext
         {
             while (true)
             {
                 var buffer = await _inputChannel.ReadAsync();
                 var outputBuffer = _lowerChannel.Output.Alloc();
-                _securityContext.Encrypt(outputBuffer, buffer);
+                securityContext.Encrypt(outputBuffer, buffer);
                 await outputBuffer.FlushAsync();
             }
         }

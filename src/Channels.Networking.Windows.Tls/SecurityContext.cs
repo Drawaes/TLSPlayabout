@@ -6,15 +6,15 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using Channels.Networking.Windows.Tls.Internal;
 using Microsoft.Win32.SafeHandles;
-using static Channels.Networking.Windows.Tls.Internal.InteropEnums;
 
-namespace Channels.Networking.Windows.Tls.Internal
+namespace Channels.Networking.Windows.Tls
 {
-    public class SspiGlobal: IDisposable
+    public class SecurityContext: IDisposable
     {
-        public const ContextFlags RequiredFlags = ContextFlags.ReplayDetect | ContextFlags.SequenceDetect | ContextFlags.Confidentiality | ContextFlags.AllocateMemory;
-        public const ContextFlags ServerRequiredFlags = RequiredFlags | ContextFlags.AcceptStream;
+        internal const ContextFlags RequiredFlags = ContextFlags.ReplayDetect | ContextFlags.SequenceDetect | ContextFlags.Confidentiality | ContextFlags.AllocateMemory;
+        internal const ContextFlags ServerRequiredFlags = RequiredFlags | ContextFlags.AcceptStream;
         private const string SecurityPackage = "Microsoft Unified Security Protocol Provider";
         private bool _initOkay = false;
         private int _maxTokenSize;
@@ -22,21 +22,24 @@ namespace Channels.Networking.Windows.Tls.Internal
         X509Certificate _serverCertificate;
         SslProtocols _supportedProtocols = SslProtocols.Tls;
         SSPIHandle _credsHandle;
+        string _hostName;
         byte[] _alpnSupportedProtocols;
         GCHandle _alpnHandle;
-        public SSPIHandle CredentialsHandle => _credsHandle;
-        public IntPtr AlpnSupportedProtocols => _alpnHandle.IsAllocated ? _alpnHandle.AddrOfPinnedObject() : IntPtr.Zero;
-        public int LengthOfSupportedProtocols => _alpnSupportedProtocols?.Length ?? 0;
+        internal SSPIHandle CredentialsHandle => _credsHandle;
+        internal IntPtr AlpnSupportedProtocols => _alpnHandle.IsAllocated ? _alpnHandle.AddrOfPinnedObject() : IntPtr.Zero;
+        internal int LengthOfSupportedProtocols => _alpnSupportedProtocols?.Length ?? 0;
+        private ChannelFactory _channelFactory;
+        internal string HostName => _hostName;
 
-
-
-        public unsafe SspiGlobal(bool isServer, X509Certificate serverCert)
-            :this(isServer, serverCert, 0)
+        public unsafe SecurityContext(ChannelFactory factory,string hostName, bool isServer, X509Certificate serverCert)
+            :this(factory, hostName, isServer, serverCert, 0)
         {
         }
 
-        public unsafe SspiGlobal(bool isServer, X509Certificate serverCert, ApplicationProtocols.ProtocolIds alpnSupportedProtocols)
+        public unsafe SecurityContext(ChannelFactory factory,string hostName, bool isServer, X509Certificate serverCert, ApplicationProtocols.ProtocolIds alpnSupportedProtocols)
         {
+            _hostName = hostName;
+            _channelFactory = factory;
             _serverCertificate = serverCert;
             _isServer = isServer;
             int numberOfPackages;
@@ -137,6 +140,20 @@ namespace Channels.Networking.Windows.Tls.Internal
             {
                 throw new InvalidOperationException("Could not acquire the credentials");
             }
+        }
+
+        public SecureChannel CreateSecureChannel(IChannel channel)
+        {
+            var chan = new SecureChannel(channel, _channelFactory);
+            if(_isServer)
+            {
+                chan.StartReading(new SecureServerContext(this, _hostName));
+            }
+            else
+            {
+                chan.StartReading(new SecureClientContext(this, _hostName));
+            }
+            return chan;
         }
 
         public void Dispose()

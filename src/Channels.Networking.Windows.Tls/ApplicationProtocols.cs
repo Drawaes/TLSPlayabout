@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using static Channels.Networking.Windows.Tls.Internal.InteropEnums;
+using Channels.Networking.Windows.Tls.Internal;
 
 namespace Channels.Networking.Windows.Tls
 {

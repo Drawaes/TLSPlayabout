@@ -6,7 +6,7 @@ using Channels.Networking.Windows.Tls.Internal;
 
 namespace Channels.Networking.Windows.Tls
 {
-    public interface ISecureContext: IDisposable
+    internal interface ISecureContext: IDisposable
     {
         int TrailerSize { get;}
         int HeaderSize { get;}

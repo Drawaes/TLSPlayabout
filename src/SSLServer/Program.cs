@@ -16,14 +16,14 @@ namespace SSLServer
     {
         static X509Certificate serverCertificate = null;
         static SocketListener server;
-        static SspiGlobal _global;
+        static SecurityContext _global;
         static ChannelFactory _factory;
 
         public static void Main(string[] args)
         {
             serverCertificate = new X509Certificate("C:\\code\\CARoot.pfx", "Test123t");
             _factory = new ChannelFactory();
-            _global = new SspiGlobal(true, serverCertificate);
+            _global = new SecurityContext(_factory,"timslaptop", true, serverCertificate);
 
 
             var endpoint = new IPEndPoint(IPAddress.Any, 17777);
@@ -38,18 +38,16 @@ namespace SSLServer
 
         private static async void UserConnected(IChannel channel)
         {
-            SecureServerContext context = null;
+            SecureChannel sChannel = null;
             try
             {
-                context = new SecureServerContext(_global, "test");
+                sChannel = _global.CreateSecureChannel(channel);
 
-                var secChannel = new SecureChannel<SecureServerContext>(channel, _factory, context);
-
-                while(true)
+                while (true)
                 {
-                    var buffer = await secChannel.Input.ReadAsync();
+                    var buffer = await sChannel.Input.ReadAsync();
                     Console.WriteLine(buffer.GetAsciiString());
-                    secChannel.Input.Advance(buffer.End);
+                    sChannel.Input.Advance(buffer.End);
                 }
 
 
@@ -60,7 +58,7 @@ namespace SSLServer
             }
             finally
             {
-                context?.Dispose();
+                sChannel?.Dispose();
                 channel?.Dispose();
             }
         }

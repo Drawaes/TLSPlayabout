@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Channels.Networking.Windows.Tls.Internal;
-using static Channels.Networking.Windows.Tls.Internal.InteropEnums;
 
 namespace Channels.Networking.Windows.Tls
 {
-    public static class SecureContextExtensions
+    internal static class SecureContextExtensions
     {
-        public static unsafe void Encrypt<T>(this T context, WritableBuffer outBuffer, ReadableBuffer buffer) where T :ISecureContext
+        internal static unsafe void Encrypt<T>(this T context, WritableBuffer outBuffer, ReadableBuffer buffer) where T :ISecureContext
         {
             outBuffer.Ensure( context.TrailerSize + context.HeaderSize + buffer.Length);
             void* outBufferPointer;
@@ -55,10 +54,9 @@ namespace Channels.Networking.Windows.Tls
 
         }
 
-        public static unsafe SecurityStatus Decrypt<T>(this T context, ReadableBuffer buffer, WritableBuffer decryptedData) where T : ISecureContext
+        internal static unsafe SecurityStatus Decrypt<T>(this T context, ReadableBuffer buffer, WritableBuffer decryptedData) where T : ISecureContext
         {
             void* pointer;
-            bool needsToWriteBack = false;
             if (buffer.IsSingleSpan)
             {
                 buffer.First.TryGetPointer(out pointer);
@@ -69,7 +67,6 @@ namespace Channels.Networking.Windows.Tls
                 Span<byte> span = new Span<byte>(tmpBuffer, buffer.Length);
                 buffer.CopyTo(span);
                 pointer = tmpBuffer;
-                needsToWriteBack = true;
             }
             
             int offset = 0;
@@ -126,6 +123,41 @@ namespace Channels.Networking.Windows.Tls
                 }
             }
             throw new InvalidOperationException($"There was an error ncrypting the data {errorCode}");
+        }
+        internal static TlsFrameType CheckForFrameType(this ReadableBuffer buffer, out ReadCursor endOfMessage)
+        {
+            endOfMessage = buffer.Start;
+            //Need at least 5 bytes to be useful
+            if (buffer.Length < 5)
+                return TlsFrameType.Incomplete;
+
+            var messageType = (TlsFrameType)buffer.ReadBigEndian<byte>();
+            buffer = buffer.Slice(1);
+
+            //Check it's a valid frametype for what we are expecting
+            if (messageType != TlsFrameType.AppData && messageType != TlsFrameType.Alert && messageType != TlsFrameType.ChangeCipherSpec && messageType != TlsFrameType.Handshake)
+                return TlsFrameType.Invalid;
+
+            //now we get the version
+
+            var version = buffer.ReadBigEndian<ushort>();
+            buffer = buffer.Slice(2);
+
+            if (version < 0x300 || version >= 0x500)
+            {
+                return TlsFrameType.Invalid;
+            }
+
+            var length = buffer.ReadBigEndian<ushort>();
+            buffer = buffer.Slice(2);
+
+            if (buffer.Length >= length)
+            {
+                endOfMessage = buffer.Slice(0, length).End;
+                return messageType;
+            }
+
+            return TlsFrameType.Incomplete;
         }
     }
 }

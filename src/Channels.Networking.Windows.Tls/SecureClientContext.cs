@@ -10,15 +10,14 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Channels.Networking.Windows.Tls.Internal;
-using static Channels.Networking.Windows.Tls.Internal.InteropEnums;
 
 namespace Channels.Networking.Windows.Tls
 {
-    public unsafe class SecureClientContext:ISecureContext
+    internal unsafe class SecureClientContext:ISecureContext
     {
         string _hostName;
         EncryptionPolicy _encryptionPolicy = EncryptionPolicy.RequireEncryption;
-        SspiGlobal _securityContext;
+        SecurityContext _securityContext;
         SSPIHandle _contextPointer;
         private int _headerSize = 5; //5 is the minimum (1 for frame type, 2 for version, 2 for frame size)
         private int _trailerSize = 16;
@@ -31,7 +30,7 @@ namespace Channels.Networking.Windows.Tls
         public int HeaderSize => _headerSize;
         public SSPIHandle ContextHandle => _contextPointer;
 
-        public SecureClientContext(SspiGlobal securityContext, string hostName)
+        public SecureClientContext(SecurityContext securityContext, string hostName)
         {
             _securityContext = securityContext;
             
@@ -131,7 +130,7 @@ namespace Channels.Networking.Windows.Tls
             }
             
             long timestamp = 0;
-            SecurityStatus errorCode = (SecurityStatus) InteropSspi.InitializeSecurityContextW(ref handle, contextptr, _hostName, SspiGlobal.RequiredFlags | ContextFlags.InitManualCredValidation,0, Endianness.Native, pointerToDescriptor,0,  newContextptr, output, ref unusedAttributes, out timestamp);
+            SecurityStatus errorCode = (SecurityStatus) InteropSspi.InitializeSecurityContextW(ref handle, contextptr, _hostName, SecurityContext.RequiredFlags | ContextFlags.InitManualCredValidation,0, Endianness.Native, pointerToDescriptor,0,  newContextptr, output, ref unusedAttributes, out timestamp);
 
             _contextPointer = localhandle;
            

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Channels.Networking.Windows.Tls.Internal
 {
 
-    public enum SecurityStatus
+    internal enum SecurityStatus
     {
         // Success / Informational
         OK = 0x00000000,

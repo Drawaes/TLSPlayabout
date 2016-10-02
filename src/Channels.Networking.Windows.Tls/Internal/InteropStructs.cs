@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using static Channels.Networking.Windows.Tls.Internal.InteropEnums;
 
 namespace Channels.Networking.Windows.Tls.Internal
 {
@@ -19,20 +18,14 @@ namespace Channels.Networking.Windows.Tls.Internal
         public IntPtr Comment;
     }
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct SSPIHandle
+    internal struct SSPIHandle
     {
         public IntPtr handleHi;
         public IntPtr handleLo;
 
         public bool IsValid => handleHi != IntPtr.Zero && handleLo != IntPtr.Zero;
     }
-
     
-
-    
-    
-
-
     [StructLayout(LayoutKind.Sequential)]
     internal struct SecureCredential
     {
@@ -90,7 +83,7 @@ namespace Channels.Networking.Windows.Tls.Internal
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct SecPkgContext_ApplicationProtocol
+    internal unsafe struct SecPkgContext_ApplicationProtocol
     {
         public SEC_APPLICATION_PROTOCOL_NEGOTIATION_STATUS ProtoNegoStatus; // Application  protocol negotiation status
         public SEC_APPLICATION_PROTOCOL_NEGOTIATION_EXT ProtoNegoExt;       // Protocol negotiation extension type corresponding to this protocol ID

@@ -8,15 +8,14 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Channels.Networking.Windows.Tls.Internal;
-using static Channels.Networking.Windows.Tls.Internal.InteropEnums;
 
 namespace Channels.Networking.Windows.Tls
 {
-    public unsafe class SecureServerContext: ISecureContext
+    internal unsafe class SecureServerContext: ISecureContext
     {
         string _hostName;
         EncryptionPolicy _encryptionPolicy = EncryptionPolicy.RequireEncryption;
-        SspiGlobal _securityContext;
+        SecurityContext _securityContext;
         SSPIHandle _contextPointer;
         private int _headerSize = 5; //5 is the minimum (1 for frame type, 2 for version, 2 for frame size)
         private int _trailerSize = 16;
@@ -29,7 +28,7 @@ namespace Channels.Networking.Windows.Tls
         public int TrailerSize => _trailerSize;
         public SSPIHandle ContextHandle => _contextPointer;
 
-        public SecureServerContext(SspiGlobal securityContext, string hostName)
+        public SecureServerContext(SecurityContext securityContext, string hostName)
         {
             _securityContext = securityContext;
             
@@ -112,7 +111,7 @@ namespace Channels.Networking.Windows.Tls
             {
                 contextptr = Unsafe.AsPointer(ref _contextPointer);
             }
-            var result = InteropSspi.AcceptSecurityContext(ref handle, contextptr, input, SspiGlobal.ServerRequiredFlags, Endianness.Native, ref _contextPointer, output, ref flags, out timestamp);
+            var result = InteropSspi.AcceptSecurityContext(ref handle, contextptr, input, SecurityContext.ServerRequiredFlags, Endianness.Native, ref _contextPointer, output, ref flags, out timestamp);
 
 
             var errorCode = (SecurityStatus)result;
