@@ -14,29 +14,27 @@ using static Channels.Networking.Windows.Tls.Internal.InteropEnums;
 
 namespace Channels.Networking.Windows.Tls
 {
-    public unsafe class SecureClientContext: IDisposable
+    public unsafe class SecureClientContext:ISecureContext
     {
-        EncryptionPolicy _encryptPolicy;
         string _hostName;
-        bool _remoteCertRequired = false;
-        bool _checkCertName = false;
-        bool _checkCertRevocationStatus = false;
         EncryptionPolicy _encryptionPolicy = EncryptionPolicy.RequireEncryption;
         SspiGlobal _securityContext;
         SSPIHandle _contextPointer;
         private int _headerSize = 5; //5 is the minimum (1 for frame type, 2 for version, 2 for frame size)
         private int _trailerSize = 16;
         private int _maxDataSize = 16354;
-        private bool _readerToSend;
+        private bool _readyToSend;
         private ApplicationProtocols.ProtocolIds _negotiatedProtocol;
-        public bool ReaderToSend => _readerToSend;
+        public bool ReadyToSend => _readyToSend;
         public ApplicationProtocols.ProtocolIds NegotiatedProtocol => _negotiatedProtocol;
+        public int TrailerSize => _trailerSize;
+        public int HeaderSize => _headerSize;
+        public SSPIHandle ContextHandle => _contextPointer;
 
         public SecureClientContext(SspiGlobal securityContext, string hostName)
         {
             _securityContext = securityContext;
-            _encryptPolicy = EncryptionPolicy.RequireEncryption;
-
+            
             if (hostName == null)
             {
                 throw new ArgumentNullException(nameof(hostName));
@@ -46,11 +44,9 @@ namespace Channels.Networking.Windows.Tls
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            if (_contextPointer.IsValid) { InteropSspi.DeleteSecurityContext(ref _contextPointer);}
         }
-
         
-
         public byte[] ProcessContextMessage(ReadableBuffer messageBuffer)
         {
             if (!messageBuffer.IsSingleSpan)
@@ -168,123 +164,12 @@ namespace Channels.Networking.Windows.Tls
                         }
                         _negotiatedProtocol = ApplicationProtocols.GetNegotiatedProtocol(protoInfo.ProtocolId, protoInfo.ProtocolIdSize);
                     }
-                    _readerToSend = true;
+                    _readyToSend = true;
                 }
                 return outArray;
             }
             
             throw new InvalidOperationException($"An error occured trying to negoiate a session {errorCode}");
-        }
-
-        
-        public void Encrypt(WritableBuffer outBuffer, ReadableBuffer buffer)
-        {
-            outBuffer.Ensure(_trailerSize + _headerSize + buffer.Length);
-            void* outBufferPointer;
-            outBuffer.Memory.TryGetPointer(out outBufferPointer);
-
-            buffer.CopyTo(outBuffer.Memory.Slice(_headerSize, buffer.Length));
-
-            var securityBuff = stackalloc SecurityBuffer[4];
-            SecurityBufferDescriptor sdcInOut = new SecurityBufferDescriptor(4);
-            securityBuff[0].size = _headerSize;
-            securityBuff[0].type = SecurityBufferType.Header;
-            securityBuff[0].tokenPointer = outBufferPointer;
-
-            securityBuff[1].size = buffer.Length;
-            securityBuff[1].type = SecurityBufferType.Data;
-            securityBuff[1].tokenPointer = (byte*)outBufferPointer + _headerSize;
-
-            securityBuff[2].size = _trailerSize;
-            securityBuff[2].type = SecurityBufferType.Trailer;
-            securityBuff[2].tokenPointer = (byte*)outBufferPointer + _headerSize + buffer.Length;
-
-            securityBuff[3].size = 0;
-            securityBuff[3].tokenPointer = null;
-            securityBuff[3].type = SecurityBufferType.Empty;
-
-            sdcInOut.UnmanagedPointer = securityBuff;
-
-            var result = (SecurityStatus)InteropSspi.EncryptMessage(ref _contextPointer, 0, sdcInOut, 0);
-            if (result == 0)
-            {
-                outBuffer.Advance(_headerSize + _trailerSize + buffer.Length);
-            }
-            else
-            {
-                throw new InvalidOperationException("BlaBla");
-            }
-
-        }
-
-
-        public unsafe SecurityStatus Decrypt(ReadableBuffer buffer, out ReadableBuffer decryptedData)
-        {
-            void* pointer;
-            
-            if (buffer.IsSingleSpan)
-            {
-                buffer.First.TryGetPointer(out pointer);
-            }
-            else
-            {
-                byte* tmpBuffer = stackalloc byte[buffer.Length];
-                Span<byte> span = new Span<byte>(tmpBuffer,buffer.Length);
-                buffer.CopyTo(span);
-                pointer = tmpBuffer;
-            }
-
-            decryptedData = buffer;
-            int offset = 0;
-            int count = buffer.Length;
-
-            var secStatus = DecryptMessage(pointer, ref offset, ref count);
-            decryptedData = buffer.Slice(offset, count);
-            //if (needsToWriteBack)
-            //{
-            //    var actualData = memory.Slice().Slice(offset,count);
-            //    decryptedData.FirstSpan.Write(actualData);
-            //}
-            return secStatus;
-        }
-
-        private unsafe SecurityStatus DecryptMessage(void* buffer, ref int offset, ref int count)
-        {
-            var securityBuff = stackalloc SecurityBuffer[4];
-            SecurityBufferDescriptor sdcInOut = new SecurityBufferDescriptor(4);
-            securityBuff[0].size = count;
-            securityBuff[0].tokenPointer = buffer;
-            securityBuff[0].type = SecurityBufferType.Data;
-            securityBuff[1].size = 0;
-            securityBuff[1].tokenPointer = null;
-            securityBuff[1].type = SecurityBufferType.Empty;
-            securityBuff[2].size = 0;
-            securityBuff[2].tokenPointer = null;
-            securityBuff[2].type = SecurityBufferType.Empty;
-            securityBuff[3].size = 0;
-            securityBuff[3].tokenPointer = null;
-            securityBuff[3].type = SecurityBufferType.Empty;
-
-            sdcInOut.UnmanagedPointer = securityBuff;
-
-            var errorCode = (SecurityStatus)InteropSspi.DecryptMessage(ref _contextPointer, sdcInOut, 0, null);
-
-            if (errorCode == 0)
-            {
-                for (int i = 0; i < 4; i++)
-                {
-                    if (securityBuff[i].type == SecurityBufferType.Data)
-                    {
-                        //we have found the data lets find the offset
-                        offset = (int)((byte*)securityBuff[i].tokenPointer - (byte*)buffer);
-                        if (offset > (count - 1))
-                            throw new OverflowException();
-                        count = securityBuff[i].size;
-                        return errorCode;
-                    }
-                }
-            }
-            throw new NotImplementedException();
         }
     }
 }

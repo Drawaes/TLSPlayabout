@@ -24,10 +24,7 @@ namespace Channels.Networking.Windows.Tls.Internal
         public IntPtr handleHi;
         public IntPtr handleLo;
 
-        public bool IsValid()
-        {
-            return handleHi != IntPtr.Zero && handleLo != IntPtr.Zero;
-        }
+        public bool IsValid => handleHi != IntPtr.Zero && handleLo != IntPtr.Zero;
     }
 
     

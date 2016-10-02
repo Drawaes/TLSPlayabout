@@ -21,6 +21,9 @@ namespace Channels.Networking.Windows.Tls.Internal
         internal unsafe static extern int AcquireCredentialsHandleW([In] string principal, [In] string moduleName, [In] int usage, [In] void* logonID, [In] ref SecureCredential authdata, [In] void* keyCallback, [In] void* keyArgument, ref SSPIHandle handlePtr, [Out] out long timeStamp);
 
         [DllImport(Dll, ExactSpelling = true, SetLastError = true)]
+        internal static extern int DeleteSecurityContext(ref SSPIHandle handlePtr);
+        
+        [DllImport(Dll, ExactSpelling = true, SetLastError = true)]
         internal static extern int FreeCredentialsHandle(ref SSPIHandle handlePtr);
 
         [DllImport(Dll, ExactSpelling = true, SetLastError = true)]

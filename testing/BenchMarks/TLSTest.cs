@@ -60,7 +60,7 @@ namespace BenchMarks
                 {
                     buffer = await _clientChannel.ReadAsync();
                     ReadCursor pointToSliceMessage;
-                    var f = _serverContext.CheckForFrameType(buffer, out pointToSliceMessage);
+                    var f = buffer.CheckForFrameType( out pointToSliceMessage);
                     while (f != TlsFrameType.Incomplete)
                     {
                         if (f == TlsFrameType.Handshake || f == TlsFrameType.ChangeCipherSpec)
@@ -74,14 +74,14 @@ namespace BenchMarks
                                 output.Write(buff);
                                 await output.FlushAsync();
                             }
-                            if (_serverContext.ReaderToSend)
+                            if (_serverContext.ReadyToSend)
                                 return;
                         }
                         else if (f == TlsFrameType.Invalid)
                         {
                             throw new InvalidOperationException();
                         }
-                        f = _serverContext.CheckForFrameType(buffer, out pointToSliceMessage);
+                        f = buffer.CheckForFrameType( out pointToSliceMessage);
                     }
                     _clientChannel.AdvanceReader(buffer.Start, buffer.End);
                 }
@@ -121,7 +121,7 @@ namespace BenchMarks
                                 output.Write(buff);
                                 await output.FlushAsync();
                             }
-                            if (_clientContext.ReaderToSend)
+                            if (_clientContext.ReadyToSend)
                                 return;
                         }
                         else if (f == TlsFrameType.Invalid)

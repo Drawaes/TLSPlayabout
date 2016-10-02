@@ -6,11 +6,14 @@ using Channels.Networking.Windows.Tls.Internal;
 
 namespace Channels.Networking.Windows.Tls
 {
-    public interface ISecureContext
+    public interface ISecureContext: IDisposable
     {
-        byte[] ProcessContextMessage(ReadableBuffer messageBuffer);
+        int TrailerSize { get;}
+        int HeaderSize { get;}
 
-        void EncryptInPlace(WritableBuffer outBuffer, ReadableBuffer buffer);
-        void EncryptWithCopy(WritableBuffer outBuffer, ReadableBuffer buffer);
+        SSPIHandle ContextHandle { get;}
+
+        byte[] ProcessContextMessage(ReadableBuffer messageBuffer);
+        
     }
 }

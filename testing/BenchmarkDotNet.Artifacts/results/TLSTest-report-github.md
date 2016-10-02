@@ -14,9 +14,6 @@ Jit=RyuJit  LaunchCount=2  WarmupCount=1
 TargetCount=3  
 
 ```
-  Method | Median | StdDev | Gen 0 | Gen 1 | Gen 2 | Bytes Allocated/Op |
--------- |------- |------- |------ |------ |------ |------------------- |
- RunTest |     NA |     NA |     - |     - |     - |                  ∞ |
-
-Benchmarks with issues:
-  TLSTest_RunTest_X64_Jit-RyuJit_WarmupCount1_TargetCount3_LaunchCount2_IterationTime10000
+  Method |    Median |    StdDev |  Gen 0 |  Gen 1 | Gen 2 | Bytes Allocated/Op |
+-------- |---------- |---------- |------- |------- |------ |------------------- |
+ RunTest | 3.1868 us | 0.1745 us | 205.00 | 196.00 | 10.00 |              23.43 |

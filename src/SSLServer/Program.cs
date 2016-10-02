@@ -22,7 +22,7 @@ namespace SSLServer
         {
             serverCertificate = new X509Certificate("C:\\code\\CARoot.pfx", "Test123t");
 
-            _global = new SspiGlobal(true, serverCertificate);
+            _global = new SspiGlobal(true, serverCertificate,ApplicationProtocols.ProtocolIds.Http2overTLS);
 
             
             var endpoint = new IPEndPoint(IPAddress.Any , 17777);
@@ -46,7 +46,7 @@ namespace SSLServer
 
 
                     ReadCursor pointToSliceMessage;
-                    var f = context.CheckForFrameType(buffer,out pointToSliceMessage);
+                    var f = buffer.CheckForFrameType(out pointToSliceMessage);
                     while (f != TlsFrameType.Incomplete)
                     {
                         if (f == TlsFrameType.Handshake || f == TlsFrameType.ChangeCipherSpec)
@@ -71,16 +71,14 @@ namespace SSLServer
                             buffer = buffer.Slice(pointToSliceMessage);
                             ReadableBuffer decryptedData;
                             context.Decrypt(messageBuffer, out decryptedData);
-
-                            var outBuff = channel.Output.Alloc(10);
-                            context.Encrypt(outBuff, decryptedData);
-                            await outBuff.FlushAsync();
-                            Console.WriteLine(decryptedData.GetUtf8String());
-                            
+                            if(decryptedData.Length >= 24);
+                            {
+                                //check for http/2 preface
+                            }                            
                             
 
                         }
-                        f = context.CheckForFrameType(buffer, out pointToSliceMessage);
+                        f = buffer.CheckForFrameType(out pointToSliceMessage);
                     }
 
 
