@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Channels.Networking.Windows.Tls.Internal
 {
-    public enum TlsFrameType
+    internal enum TlsFrameType
     {
         ChangeCipherSpec = 20,
         Alert = 21,

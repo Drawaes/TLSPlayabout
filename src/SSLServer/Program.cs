@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Channels;
 using Channels.Networking.Sockets;
 using Channels.Networking.Windows.Tls;
-using Channels.Networking.Windows.Tls.Internal;
 using Channels.Text.Primitives;
 
 namespace SSLServer
@@ -38,6 +37,8 @@ namespace SSLServer
 
         private static async void UserConnected(IChannel channel)
         {
+            Channels.Networking.Windows.Tls.
+
             SecureChannel sChannel = null;
             try
             {
