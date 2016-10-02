@@ -47,6 +47,8 @@ namespace Channels.Networking.Windows.Tls
 
         public byte[] ProcessContextMessage(ReadableBuffer messageBuffer)
         {
+            if(messageBuffer.Length == 0)
+                return null;
             SecurityBufferDescriptor input = new SecurityBufferDescriptor(3);
             SecurityBuffer* inputBuff = stackalloc SecurityBuffer[3];
 

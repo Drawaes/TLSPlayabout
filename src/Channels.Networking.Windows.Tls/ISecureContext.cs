@@ -12,7 +12,7 @@ namespace Channels.Networking.Windows.Tls
         int HeaderSize { get;}
 
         SSPIHandle ContextHandle { get;}
-
+        bool ReadyToSend { get;}
         byte[] ProcessContextMessage(ReadableBuffer messageBuffer);
         
     }

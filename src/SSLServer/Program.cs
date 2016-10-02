@@ -17,15 +17,16 @@ namespace SSLServer
         static X509Certificate serverCertificate = null;
         static SocketListener server;
         static SspiGlobal _global;
+        static ChannelFactory _factory;
 
         public static void Main(string[] args)
         {
             serverCertificate = new X509Certificate("C:\\code\\CARoot.pfx", "Test123t");
+            _factory = new ChannelFactory();
+            _global = new SspiGlobal(true, serverCertificate);
 
-            _global = new SspiGlobal(true, serverCertificate,ApplicationProtocols.ProtocolIds.Http2overTLS);
 
-            
-            var endpoint = new IPEndPoint(IPAddress.Any , 17777);
+            var endpoint = new IPEndPoint(IPAddress.Any, 17777);
 
             server = new SocketListener();
             server.OnConnection(UserConnected);
@@ -37,55 +38,18 @@ namespace SSLServer
 
         private static async void UserConnected(IChannel channel)
         {
-            ChannelFactory fat = new ChannelFactory();
-            var factChannel = fat.CreateChannel();
-            SecureServerContext context = new SecureServerContext(_global,"test");
+            SecureServerContext context = null;
             try
             {
-                while (true)
+                context = new SecureServerContext(_global, "test");
+
+                var secChannel = new SecureChannel<SecureServerContext>(channel, _factory, context);
+
+                while(true)
                 {
-                   var buffer = await channel.Input.ReadAsync();
-
-
-                    ReadCursor pointToSliceMessage;
-                    var f = buffer.CheckForFrameType(out pointToSliceMessage);
-                    while (f != TlsFrameType.Incomplete)
-                    {
-                        if (f == TlsFrameType.Handshake || f == TlsFrameType.ChangeCipherSpec)
-                        {
-                            var messageBuffer = buffer.Slice(0, pointToSliceMessage);
-                            buffer = buffer.Slice(pointToSliceMessage);
-                            var buff = context.ProcessContextMessage(messageBuffer);
-                            if (buff != null && buff.Length > 0)
-                            {
-                                var output = channel.Output.Alloc(buff.Length);
-                                output.Write(buff);
-                                await output.FlushAsync();
-                            }
-                        }
-                        else if (f == TlsFrameType.Invalid)
-                        {
-                            throw new InvalidOperationException();
-                        }
-                        else if (f == TlsFrameType.AppData)
-                        {
-                            var messageBuffer = buffer.Slice(0, pointToSliceMessage);
-                            buffer = buffer.Slice(pointToSliceMessage);
-                            var decryptedData = factChannel.Alloc();
-
-                            context.Decrypt(messageBuffer, decryptedData);
-
-                            await decryptedData.FlushAsync();                         
-                            
-
-                        }
-                        f = buffer.CheckForFrameType(out pointToSliceMessage);
-                    }
-
-
-
-
-                    channel.Input.Advance(buffer.Start, buffer.End);
+                    var buffer = await secChannel.Input.ReadAsync();
+                    Console.WriteLine(buffer.GetAsciiString());
+                    secChannel.Input.Advance(buffer.End);
                 }
 
 

@@ -33,8 +33,8 @@ namespace Channels.Networking.Windows.Tls.Internal
         public unsafe SspiGlobal(bool isServer, X509Certificate serverCert)
             :this(isServer, serverCert, 0)
         {
-
         }
+
         public unsafe SspiGlobal(bool isServer, X509Certificate serverCert, ApplicationProtocols.ProtocolIds alpnSupportedProtocols)
         {
             _serverCertificate = serverCert;
