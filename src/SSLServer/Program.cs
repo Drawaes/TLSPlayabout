@@ -37,6 +37,8 @@ namespace SSLServer
 
         private static async void UserConnected(IChannel channel)
         {
+            ChannelFactory fat = new ChannelFactory();
+            var factChannel = fat.CreateChannel();
             SecureServerContext context = new SecureServerContext(_global,"test");
             try
             {
@@ -69,12 +71,11 @@ namespace SSLServer
                         {
                             var messageBuffer = buffer.Slice(0, pointToSliceMessage);
                             buffer = buffer.Slice(pointToSliceMessage);
-                            ReadableBuffer decryptedData;
-                            context.Decrypt(messageBuffer, out decryptedData);
-                            if(decryptedData.Length >= 24);
-                            {
-                                //check for http/2 preface
-                            }                            
+                            var decryptedData = factChannel.Alloc();
+
+                            context.Decrypt(messageBuffer, decryptedData);
+
+                            await decryptedData.FlushAsync();                         
                             
 
                         }

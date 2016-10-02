@@ -151,15 +151,11 @@ namespace BenchMarks
             _clientChannel.AdvanceReader(inputBuffer.End,inputBuffer.End);
 
             var fromServer = _serverChannel.ReadAsync().GetResult();
-            ReadableBuffer decryptedData;
-            _clientContext.Decrypt(fromServer,out decryptedData );
+            var clientWriter = _clientChannel.Alloc();
+            _clientContext.Decrypt(fromServer, clientWriter);
             _serverChannel.AdvanceReader(fromServer.End,fromServer.End);
 
             var cBuffer = _clientChannel.Alloc();
-            cBuffer.Append(ref decryptedData);
-            cBuffer.Commit();
-            cBuffer.FlushAsync().Wait();
-
         }
     }
 }

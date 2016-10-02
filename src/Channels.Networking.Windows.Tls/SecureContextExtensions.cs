@@ -55,7 +55,7 @@ namespace Channels.Networking.Windows.Tls
 
         }
 
-        public static unsafe SecurityStatus Decrypt<T>(this T context, ReadableBuffer buffer, out ReadableBuffer decryptedData) where T : ISecureContext
+        public static unsafe SecurityStatus Decrypt<T>(this T context, ReadableBuffer buffer, WritableBuffer decryptedData) where T : ISecureContext
         {
             void* pointer;
             bool needsToWriteBack = false;
@@ -71,18 +71,20 @@ namespace Channels.Networking.Windows.Tls
                 pointer = tmpBuffer;
                 needsToWriteBack = true;
             }
-
-            decryptedData = buffer;
+            
             int offset = 0;
             int count = buffer.Length;
 
             var secStatus = DecryptMessage(pointer, ref offset, ref count, context.ContextHandle);
-            decryptedData = buffer.Slice(offset, count);
-            if (needsToWriteBack)
+            if (buffer.IsSingleSpan)
             {
-
-                //var actualData = memory.Slice().Slice(offset,count);
-                //decryptedData.FirstSpan.Write(actualData);
+                buffer = buffer.Slice(offset, count);
+                decryptedData.Append(ref buffer);
+            }
+            else
+            {
+                decryptedData.Ensure(buffer.Length);
+                decryptedData.Write(new Span<byte>(pointer, buffer.Length));
             }
             return secStatus;
         }
