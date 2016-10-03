@@ -74,21 +74,22 @@ namespace Channels.Networking.Windows.Tls
 
         private async void StartWriting<T>(T securityContext) where T : ISecureContext
         {
+            int maxBlockSize = (SecurityContext.BlockSize - securityContext.HeaderSize - securityContext.TrailerSize);
             while (true)
             {
                 var buffer = await _inputChannel.ReadAsync();
                 while (buffer.Length > 0)
                 {
                     ReadableBuffer messageBuffer;
-                    if(buffer.Length <= SecurityContext.BlockSize)
+                    if(buffer.Length <= maxBlockSize)
                     {
                         messageBuffer = buffer;
                         buffer = buffer.Slice(buffer.End);
                     }
                     else
                     {
-                        messageBuffer = buffer.Slice(0,SecurityContext.BlockSize);
-                        buffer = buffer.Slice(SecurityContext.BlockSize);
+                        messageBuffer = buffer.Slice(0, maxBlockSize);
+                        buffer = buffer.Slice(maxBlockSize);
                     }
 
                     var outputBuffer = _lowerChannel.Output.Alloc();
