@@ -77,9 +77,26 @@ namespace Channels.Networking.Windows.Tls
             while (true)
             {
                 var buffer = await _inputChannel.ReadAsync();
-                var outputBuffer = _lowerChannel.Output.Alloc();
-                securityContext.Encrypt(outputBuffer, buffer);
-                await outputBuffer.FlushAsync();
+                while (buffer.Length > 0)
+                {
+                    ReadableBuffer messageBuffer;
+                    if(buffer.Length <= SecurityContext.BlockSize)
+                    {
+                        messageBuffer = buffer;
+                        buffer = buffer.Slice(buffer.End);
+                    }
+                    else
+                    {
+                        messageBuffer = buffer.Slice(0,SecurityContext.BlockSize);
+                        buffer = buffer.Slice(SecurityContext.BlockSize);
+                    }
+
+                    var outputBuffer = _lowerChannel.Output.Alloc();
+
+                    securityContext.Encrypt(outputBuffer, messageBuffer);
+                    await outputBuffer.FlushAsync();
+                }
+                _inputChannel.Advance(buffer.End);
             }
         }
 
