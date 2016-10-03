@@ -45,8 +45,21 @@ namespace Channels.Networking.Windows.Tls
             SecurityBuffer* inputBuff = stackalloc SecurityBuffer[3];
 
             void* arrayPointer;
-            messageBuffer.First.TryGetPointer(out arrayPointer);
-
+            if(messageBuffer.IsSingleSpan)
+            {
+                messageBuffer.First.TryGetPointer(out arrayPointer);
+            }
+            else
+            {
+                if(messageBuffer.Length > SecurityContext.MaxStackAllocSize)
+                {
+                    throw new OverflowException($"We need to create a buffer on the stack of size {messageBuffer.Length} but the max is {SecurityContext.MaxStackAllocSize}");
+                }
+                byte* tempBytes = stackalloc byte[messageBuffer.Length];
+                messageBuffer.CopyTo(new Span<byte>(tempBytes,messageBuffer.Length));
+                arrayPointer = tempBytes;
+            }
+            
             inputBuff[0] = new SecurityBuffer()
             {
                 tokenPointer = arrayPointer,
@@ -73,7 +86,6 @@ namespace Channels.Networking.Windows.Tls
                 inputBuff[2].tokenPointer = null;
                 inputBuff[2].type = SecurityBufferType.Empty;
             }
-
             input.UnmanagedPointer = inputBuff;
 
             SecurityBufferDescriptor output = new SecurityBufferDescriptor(3);
@@ -87,11 +99,8 @@ namespace Channels.Networking.Windows.Tls
             outputBuff[2].size = 0;
             outputBuff[2].tokenPointer = null;
             outputBuff[2].type = SecurityBufferType.Empty;
-
-
             output.UnmanagedPointer = outputBuff;
-
-
+            
             ContextFlags flags = default(ContextFlags);
             long timestamp;
             var handle = _securityContext.CredentialsHandle;

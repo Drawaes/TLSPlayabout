@@ -63,6 +63,10 @@ namespace Channels.Networking.Windows.Tls
             }
             else
             {
+                if (buffer.Length > SecurityContext.MaxStackAllocSize)
+                {
+                    throw new OverflowException($"We need to create a buffer on the stack of size {buffer.Length} but the max is {SecurityContext.MaxStackAllocSize}");
+                }
                 byte* tmpBuffer = stackalloc byte[buffer.Length];
                 Span<byte> span = new Span<byte>(tmpBuffer, buffer.Length);
                 buffer.CopyTo(span);

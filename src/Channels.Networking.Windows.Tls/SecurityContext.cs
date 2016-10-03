@@ -30,6 +30,8 @@ namespace Channels.Networking.Windows.Tls
         internal int LengthOfSupportedProtocols => _alpnSupportedProtocols?.Length ?? 0;
         private ChannelFactory _channelFactory;
         internal string HostName => _hostName;
+        internal const int BlockSize = 1024 * 4 - 64; //Current fixed block size
+        public const int MaxStackAllocSize = 32 * 1024;
 
         public SecurityContext(ChannelFactory factory,string hostName, bool isServer, X509Certificate serverCert)
             :this(factory, hostName, isServer, serverCert, 0)

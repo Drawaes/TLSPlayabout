@@ -40,10 +40,6 @@ namespace Channels.Networking.Windows.Tls
         
         public byte[] ProcessContextMessage(ReadableBuffer messageBuffer)
         {
-            if (!messageBuffer.IsSingleSpan)
-            {
-                throw new NotImplementedException();
-            }
             SecurityBufferDescriptor output = new SecurityBufferDescriptor(2);
             SecurityBuffer* outputBuff = stackalloc SecurityBuffer[2];
             outputBuff[0].size = 0;
@@ -87,6 +83,10 @@ namespace Channels.Networking.Windows.Tls
                 }
                 else
                 {
+                    if (messageBuffer.Length > SecurityContext.MaxStackAllocSize)
+                    {
+                        throw new OverflowException($"We need to create a buffer on the stack of size {messageBuffer.Length} but the max is {SecurityContext.MaxStackAllocSize}");
+                    }
                     byte* tempBuffer = stackalloc byte[messageBuffer.Length];
                     Span<byte> tmpSpan = new Span<byte>(tempBuffer,messageBuffer.Length);
                     messageBuffer.CopyTo(tmpSpan);
