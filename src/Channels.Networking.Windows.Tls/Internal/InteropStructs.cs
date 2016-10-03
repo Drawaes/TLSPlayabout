@@ -79,8 +79,8 @@ namespace Channels.Networking.Windows.Tls.Internal
     [StructLayout(LayoutKind.Sequential)]
     internal unsafe struct ContextApplicationProtocol
     {
-        public SEC_APPLICATION_PROTOCOL_NEGOTIATION_STATUS ProtoNegoStatus; 
-        public SEC_APPLICATION_PROTOCOL_NEGOTIATION_EXT ProtoNegoExt;
+        public ApplicationProtocols.ApplicationProtocolNegotiationStatus ProtoNegoStatus; 
+        public ApplicationProtocols.ApplicaitonProtocolNegotiationExtension ProtoNegoExt;
         public byte ProtocolIdSize;
         public fixed byte ProtocolId[255];
     }

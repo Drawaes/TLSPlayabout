@@ -57,7 +57,7 @@ namespace Channels.Networking.Windows.Tls
             int length = _HeaderLength + listLength - _ContentOffset;
             spa.Write(length);
             spa = spa.Slice(4);
-            spa.Write(SEC_APPLICATION_PROTOCOL_NEGOTIATION_EXT.SecApplicationProtocolNegotiationExt_ALPN);
+            spa.Write(ApplicaitonProtocolNegotiationExtension.ALPN);
             spa = spa.Slice(4);
             spa.Write(listLength);
             spa = spa.Slice(2);
@@ -90,5 +90,32 @@ namespace Channels.Networking.Windows.Tls
             }
             throw new ArgumentOutOfRangeException($"Could not match {Encoding.ASCII.GetString(protocolId, protocolIdSize)} to a protocol");
         }
+
+        internal enum ApplicaitonProtocolNegotiationExtension
+        {
+            None = 0,
+            NPN,
+            ALPN,
+        }
+
+        internal enum ApplicationProtocolNegotiationStatus: uint
+        {
+            None = 0,
+            Success,
+            SelectedClientOnly
+        }
+
+        internal static unsafe ProtocolIds FindNegotiatedProtocol(SSPIHandle context)
+        {
+            ContextApplicationProtocol protoInfo;
+
+            InteropSspi.QueryContextAttributesW(ref context, ContextAttribute.ApplicationProtocol, out protoInfo);
+
+            if (protoInfo.ProtoNegoStatus != ApplicationProtocolNegotiationStatus.Success)
+            {
+                throw new InvalidOperationException("Could not negotiate a mutal application protocol");
+            }
+            return GetNegotiatedProtocol(protoInfo.ProtocolId, protoInfo.ProtocolIdSize);
+         }
     }
 }

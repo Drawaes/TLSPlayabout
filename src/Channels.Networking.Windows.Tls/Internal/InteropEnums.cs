@@ -65,21 +65,7 @@ namespace Channels.Networking.Windows.Tls.Internal
 
         UnverifiedTargetName = 0x20000000,   // ISC_REQ_UNVERIFIED_TARGET_NAME
     }
-
-    internal enum SEC_APPLICATION_PROTOCOL_NEGOTIATION_EXT
-    {
-        SecApplicationProtocolNegotiationExt_None = 0,
-        SecApplicationProtocolNegotiationExt_NPN,
-        SecApplicationProtocolNegotiationExt_ALPN,
-    }
-
-    internal enum SEC_APPLICATION_PROTOCOL_NEGOTIATION_STATUS: uint
-    {
-        SecApplicationProtocolNegotiationStatus_None = 0,
-        SecApplicationProtocolNegotiationStatus_Success,
-        SecApplicationProtocolNegotiationStatus_SelectedClientOnly
-    }
-
+        
     internal enum CredentialUse
     {
         Inbound = 0x1,

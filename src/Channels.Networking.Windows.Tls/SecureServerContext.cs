@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Channels.Networking.Windows.Tls.Internal;
+using static Channels.Networking.Windows.Tls.ApplicationProtocols;
 
 namespace Channels.Networking.Windows.Tls
 {
@@ -130,15 +131,7 @@ namespace Channels.Networking.Windows.Tls
 
                     if (_securityContext.LengthOfSupportedProtocols > 0)
                     {
-                        ContextApplicationProtocol protoInfo;
-
-                        InteropSspi.QueryContextAttributesW(ref _contextPointer, ContextAttribute.ApplicationProtocol, out protoInfo);
-
-                        if (protoInfo.ProtoNegoStatus != SEC_APPLICATION_PROTOCOL_NEGOTIATION_STATUS.SecApplicationProtocolNegotiationStatus_Success)
-                        {
-                            throw new InvalidOperationException("Could not negotiate a mutal application protocol");
-                        }
-                        _negotiatedProtocol = ApplicationProtocols.GetNegotiatedProtocol(protoInfo.ProtocolId, protoInfo.ProtocolIdSize);
+                        _negotiatedProtocol = ApplicationProtocols.FindNegotiatedProtocol(_contextPointer);
                     }
                     _readyToSend = true;
                 }
