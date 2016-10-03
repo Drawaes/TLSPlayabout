@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Principal;
-using System.Threading.Tasks;
 using Channels.Networking.Windows.Tls.Internal;
-using Microsoft.Win32.SafeHandles;
 
 namespace Channels.Networking.Windows.Tls
 {
@@ -33,12 +28,12 @@ namespace Channels.Networking.Windows.Tls
         internal const int BlockSize = 1024 * 4 - 64; //Current fixed block size
         public const int MaxStackAllocSize = 32 * 1024;
 
-        public SecurityContext(ChannelFactory factory,string hostName, bool isServer, X509Certificate serverCert)
-            :this(factory, hostName, isServer, serverCert, 0)
+        public SecurityContext(ChannelFactory factory, string hostName, bool isServer, X509Certificate serverCert)
+            : this(factory, hostName, isServer, serverCert, 0)
         {
         }
 
-        public SecurityContext(ChannelFactory factory,string hostName, bool isServer, X509Certificate serverCert, ApplicationProtocols.ProtocolIds alpnSupportedProtocols)
+        public SecurityContext(ChannelFactory factory, string hostName, bool isServer, X509Certificate serverCert, ApplicationProtocols.ProtocolIds alpnSupportedProtocols)
         {
             if (hostName == null)
             {
@@ -107,7 +102,7 @@ namespace Channels.Networking.Windows.Tls
                 direction = CredentialUse.Outbound;
                 flags = CredentialFlags.ValidateManual | CredentialFlags.NoDefaultCred | CredentialFlags.SendAuxRecord | CredentialFlags.UseStrongCrypto;
             }
-            
+
             var creds = new SecureCredential()
             {
                 rootStore = IntPtr.Zero,
@@ -141,9 +136,9 @@ namespace Channels.Networking.Windows.Tls
             }
 
             long timestamp = 0;
-            SecurityStatus code =(SecurityStatus) InteropSspi.AcquireCredentialsHandleW(null, SecurityPackage, (int)direction, null, ref creds, null, null, ref _credsHandle, out timestamp);
-            
-            if(code != 0)
+            SecurityStatus code = (SecurityStatus)InteropSspi.AcquireCredentialsHandleW(null, SecurityPackage, (int)direction, null, ref creds, null, null, ref _credsHandle, out timestamp);
+
+            if (code != 0)
             {
                 throw new InvalidOperationException("Could not acquire the credentials");
             }
@@ -152,7 +147,7 @@ namespace Channels.Networking.Windows.Tls
         public SecureChannel CreateSecureChannel(IChannel channel)
         {
             var chan = new SecureChannel(channel, _channelFactory);
-            if(_isServer)
+            if (_isServer)
             {
                 chan.StartReading(new SecureServerContext(this));
             }
@@ -166,7 +161,7 @@ namespace Channels.Networking.Windows.Tls
         public void Dispose()
         {
             InteropSspi.FreeCredentialsHandle(ref _credsHandle);
-            if(_alpnHandle.IsAllocated) { _alpnHandle.Free();} 
+            if (_alpnHandle.IsAllocated) { _alpnHandle.Free(); }
         }
     }
 }

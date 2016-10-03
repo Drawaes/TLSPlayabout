@@ -1,12 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Security;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using Channels.Networking.Windows.Tls.Internal;
 
 namespace Channels.Networking.Windows.Tls
@@ -39,27 +32,27 @@ namespace Channels.Networking.Windows.Tls
 
         public byte[] ProcessContextMessage(ReadableBuffer messageBuffer)
         {
-            if(messageBuffer.Length == 0)
+            if (messageBuffer.Length == 0)
                 return null;
             SecurityBufferDescriptor input = new SecurityBufferDescriptor(3);
             SecurityBuffer* inputBuff = stackalloc SecurityBuffer[3];
 
             void* arrayPointer;
-            if(messageBuffer.IsSingleSpan)
+            if (messageBuffer.IsSingleSpan)
             {
                 messageBuffer.First.TryGetPointer(out arrayPointer);
             }
             else
             {
-                if(messageBuffer.Length > SecurityContext.MaxStackAllocSize)
+                if (messageBuffer.Length > SecurityContext.MaxStackAllocSize)
                 {
                     throw new OverflowException($"We need to create a buffer on the stack of size {messageBuffer.Length} but the max is {SecurityContext.MaxStackAllocSize}");
                 }
                 byte* tempBytes = stackalloc byte[messageBuffer.Length];
-                messageBuffer.CopyTo(new Span<byte>(tempBytes,messageBuffer.Length));
+                messageBuffer.CopyTo(new Span<byte>(tempBytes, messageBuffer.Length));
                 arrayPointer = tempBytes;
             }
-            
+
             inputBuff[0] = new SecurityBuffer()
             {
                 tokenPointer = arrayPointer,
@@ -73,7 +66,7 @@ namespace Channels.Networking.Windows.Tls
                 tokenPointer = null,
                 type = SecurityBufferType.Empty
             };
-            
+
             if (_securityContext.LengthOfSupportedProtocols > 0)
             {
                 inputBuff[2].size = _securityContext.LengthOfSupportedProtocols;
@@ -100,7 +93,7 @@ namespace Channels.Networking.Windows.Tls
             outputBuff[2].tokenPointer = null;
             outputBuff[2].type = SecurityBufferType.Empty;
             output.UnmanagedPointer = outputBuff;
-            
+
             ContextFlags flags = default(ContextFlags);
             long timestamp;
             var handle = _securityContext.CredentialsHandle;
@@ -114,10 +107,10 @@ namespace Channels.Networking.Windows.Tls
             {
                 contextptr = &localPointer;
             }
-            var errorCode =(SecurityStatus) InteropSspi.AcceptSecurityContext(ref handle, contextptr, input, SecurityContext.ServerRequiredFlags, Endianness.Native, ref _contextPointer, output, ref flags, out timestamp);
+            var errorCode = (SecurityStatus)InteropSspi.AcceptSecurityContext(ref handle, contextptr, input, SecurityContext.ServerRequiredFlags, Endianness.Native, ref _contextPointer, output, ref flags, out timestamp);
 
             _contextPointer = localPointer;
-                        
+
             if (errorCode == SecurityStatus.ContinueNeeded || errorCode == SecurityStatus.OK)
             {
                 byte[] outArray = null;

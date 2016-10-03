@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Channels.Networking.Windows.Tls.Internal
+﻿namespace Channels.Networking.Windows.Tls.Internal
 {
     internal enum TlsFrameType
     {

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Channels.Networking.Windows.Tls.Internal;
 
 namespace Channels.Networking.Windows.Tls
@@ -24,47 +21,54 @@ namespace Channels.Networking.Windows.Tls
 
         internal async void StartReading<T>(T securityContext) where T : ISecureContext
         {
-            while (true)
+            try
             {
-                var buffer = await _lowerChannel.Input.ReadAsync();
-
-                ReadCursor pointToSliceMessage;
-                var f = buffer.CheckForFrameType(out pointToSliceMessage);
-                while (f != TlsFrameType.Incomplete)
+                while (true)
                 {
-                    if (f == TlsFrameType.Handshake || f == TlsFrameType.ChangeCipherSpec)
-                    {
-                        var messageBuffer = buffer.Slice(0, pointToSliceMessage);
-                        buffer = buffer.Slice(pointToSliceMessage);
-                        var buff = securityContext.ProcessContextMessage(messageBuffer);
-                        if (buff != null && buff.Length > 0)
-                        {
-                            var output = _lowerChannel.Output.Alloc(buff.Length);
-                            output.Write(buff);
-                            await output.FlushAsync();
-                        }
-                        if (securityContext.ReadyToSend)
-                        {
-                            StartWriting(securityContext);
-                        }
-                    }
-                    else if (f == TlsFrameType.Invalid)
-                    {
-                        throw new InvalidOperationException("We have recieved an invalid tls frame");
-                    }
-                    else if (f == TlsFrameType.AppData)
-                    {
-                        var messageBuffer = buffer.Slice(0, pointToSliceMessage);
-                        buffer = buffer.Slice(pointToSliceMessage);
-                        var decryptedData = _outputChannel.Alloc();
+                    var buffer = await _lowerChannel.Input.ReadAsync();
 
-                        securityContext.Decrypt(messageBuffer, decryptedData);
+                    ReadCursor pointToSliceMessage;
+                    var f = buffer.CheckForFrameType(out pointToSliceMessage);
+                    while (f != TlsFrameType.Incomplete)
+                    {
+                        if (f == TlsFrameType.Handshake || f == TlsFrameType.ChangeCipherSpec)
+                        {
+                            var messageBuffer = buffer.Slice(0, pointToSliceMessage);
+                            buffer = buffer.Slice(pointToSliceMessage);
+                            var buff = securityContext.ProcessContextMessage(messageBuffer);
+                            if (buff != null && buff.Length > 0)
+                            {
+                                var output = _lowerChannel.Output.Alloc(buff.Length);
+                                output.Write(buff);
+                                await output.FlushAsync();
+                            }
+                            if (securityContext.ReadyToSend)
+                            {
+                                StartWriting(securityContext);
+                            }
+                        }
+                        else if (f == TlsFrameType.Invalid)
+                        {
+                            throw new InvalidOperationException("We have recieved an invalid tls frame");
+                        }
+                        else if (f == TlsFrameType.AppData)
+                        {
+                            var messageBuffer = buffer.Slice(0, pointToSliceMessage);
+                            buffer = buffer.Slice(pointToSliceMessage);
+                            var decryptedData = _outputChannel.Alloc();
 
-                        await decryptedData.FlushAsync();
+                            securityContext.Decrypt(messageBuffer, decryptedData);
+
+                            await decryptedData.FlushAsync();
+                        }
+                        f = buffer.CheckForFrameType(out pointToSliceMessage);
                     }
-                    f = buffer.CheckForFrameType(out pointToSliceMessage);
+                    _lowerChannel.Input.Advance(buffer.Start, buffer.End);
                 }
-                _lowerChannel.Input.Advance(buffer.Start, buffer.End);
+            }
+            finally
+            {
+                securityContext.Dispose();
             }
         }
 

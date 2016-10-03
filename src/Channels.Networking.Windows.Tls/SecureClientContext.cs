@@ -1,14 +1,5 @@
 ﻿using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Net.Security;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using Channels.Networking.Windows.Tls.Internal;
 
 namespace Channels.Networking.Windows.Tls

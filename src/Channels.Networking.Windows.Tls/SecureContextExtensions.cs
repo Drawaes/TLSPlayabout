@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Channels.Networking.Windows.Tls.Internal;
 
 namespace Channels.Networking.Windows.Tls
 {
     internal static class SecureContextExtensions
     {
-        internal static unsafe void Encrypt<T>(this T context, WritableBuffer outBuffer, ReadableBuffer buffer) where T :ISecureContext
+        internal static unsafe void Encrypt<T>(this T context, WritableBuffer outBuffer, ReadableBuffer buffer) where T : ISecureContext
         {
-            outBuffer.Ensure( context.TrailerSize + context.HeaderSize + buffer.Length);
+            outBuffer.Ensure(context.TrailerSize + context.HeaderSize + buffer.Length);
             void* outBufferPointer;
             outBuffer.Memory.TryGetPointer(out outBufferPointer);
 
@@ -72,7 +69,7 @@ namespace Channels.Networking.Windows.Tls
                 buffer.CopyTo(span);
                 pointer = tmpBuffer;
             }
-            
+
             int offset = 0;
             int count = buffer.Length;
 

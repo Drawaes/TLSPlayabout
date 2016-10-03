@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
 using Channels.Networking.Windows.Tls.Internal;
 
 namespace Channels.Networking.Windows.Tls
@@ -21,7 +18,7 @@ namespace Channels.Networking.Windows.Tls
         private static readonly byte[] _webRTCMediaAndData = new byte[] { 0x77, 0x65, 0x62, 0x72, 0x74, 0x63 }; //("webrtc")
         private static readonly byte[] _confidentialWebRTCMediaAndData = new byte[] { 0x63, 0x2d, 0x77, 0x65, 0x62, 0x72, 0x74, 0x63 }; //("c-webrtc")
         private static readonly byte[] _Ftp = new byte[] { 0x66, 0x74, 0x70 }; //("ftp")
-        private static readonly byte[][] _allProtocols = new byte[][] {_http1, _spdy1,_spdy2,_spdy3, _traversalUsingRelaysAroundNAT, _natDiscoveryUsingSessionTraversalUtilitiesforNAT, _http2overTLS, _http2overTCP,_webRTCMediaAndData,_confidentialWebRTCMediaAndData, _Ftp};
+        private static readonly byte[][] _allProtocols = new byte[][] { _http1, _spdy1, _spdy2, _spdy3, _traversalUsingRelaysAroundNAT, _natDiscoveryUsingSessionTraversalUtilitiesforNAT, _http2overTLS, _http2overTCP, _webRTCMediaAndData, _confidentialWebRTCMediaAndData, _Ftp };
         private static readonly Array _numberOfProtocols = Enum.GetValues(typeof(ProtocolIds));
 
         [Flags]
@@ -67,11 +64,11 @@ namespace Channels.Networking.Windows.Tls
 
             for (int i = 0; i < _numberOfProtocols.Length; i++)
             {
-                
+
                 if (((int)_numberOfProtocols.GetValue(i) & (int)supportedProtocols) > 0)
                 {
                     var value = _allProtocols[i];
-                    spa.Write((byte) value.Length );
+                    spa.Write((byte)value.Length);
                     spa = spa.Slice(1);
                     spa.Set(value);
                     spa = spa.Slice(value.Length);
@@ -82,13 +79,13 @@ namespace Channels.Networking.Windows.Tls
 
         internal static unsafe ProtocolIds GetNegotiatedProtocol(byte* protocolId, byte protocolIdSize)
         {
-            Span<byte> matchedValue = new Span<byte>(protocolId,protocolIdSize);
-            for(int i = 0; i < _allProtocols.Length; i++ )
+            Span<byte> matchedValue = new Span<byte>(protocolId, protocolIdSize);
+            for (int i = 0; i < _allProtocols.Length; i++)
             {
                 var proto = _allProtocols[i];
-                if(matchedValue.SequenceEqual(proto))
+                if (matchedValue.SequenceEqual(proto))
                 {
-                    return (ProtocolIds) (1 << i);
+                    return (ProtocolIds)(1 << i);
                 }
             }
             throw new ArgumentOutOfRangeException($"Could not match {Encoding.ASCII.GetString(protocolId, protocolIdSize)} to a protocol");
