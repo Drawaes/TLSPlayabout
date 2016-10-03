@@ -157,7 +157,7 @@ namespace Channels.Networking.Windows.Tls
             }
             finally
             {
-                if(handleForAllocation.IsAllocated) { handleForAllocation.Free(); }
+                if(handleForAllocation.IsAllocated) { handleForAllocation.Free();      }
             }
         }
     }
